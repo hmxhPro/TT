@@ -1,0 +1,9 @@
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.ts
+weights/
+
+./backend/models/groundingdino/weights/groundingdino_swint_ogc.pth
+./mobileclip_blt.ts

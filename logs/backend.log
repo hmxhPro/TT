@@ -1,0 +1,94 @@
+2026-05-10 15:17:16.916 | INFO     | app.services.visualizer:<module>:171 - Using CJK font for detection labels: /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+INFO:     Started server process [2660834]
+INFO:     Waiting for application startup.
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m44[0m | [1m============================================================[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m45[0m | [1mVideo Detection Agent starting up[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m46[0m | [1m  Model:  yolo_world[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m47[0m | [1m  Device: cuda:0[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m48[0m | [1m  Upload: uploads[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m49[0m | [1m  Results:results[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m50[0m | [1m============================================================[0m
+[32m2026-05-10 15:17:17[0m | [1mINFO    [0m | [36mapp.db.session[0m:[36minit_db[0m:[36m43[0m | [1mDB schema ensured (detection_tasks)[0m
+[32m2026-05-10 15:17:18[0m | [1mINFO    [0m | [36myolo_world_detector[0m:[36mload[0m:[36m61[0m | [1mLoading YOLO-World model: /home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt[0m
+[32m2026-05-10 15:17:18[0m | [1mINFO    [0m | [36myolo_world_detector[0m:[36mload[0m:[36m67[0m | [1mUsing local model file: /home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt[0m
+[32m2026-05-10 15:17:18[0m | [1mINFO    [0m | [36myolo_world_detector[0m:[36mload[0m:[36m85[0m | [1mYOLO-World loaded successfully on cuda:0[0m
+[32m2026-05-10 15:17:18[0m | [1mINFO    [0m | [36myolo_world_detector[0m:[36mload[0m:[36m86[0m | [1mSAHI config: slice=640x640, overlap=0.2x0.2[0m
+[32m2026-05-10 15:17:18[0m | [1mINFO    [0m | [36mapp.services.detector[0m:[36mget_detector[0m:[36m381[0m | [1mDetector ready: yolo_world on cuda:0[0m
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:33440 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46508 - "GET /api/frame/0ae15909-7c03-481a-8c2f-d3685c0bbde4/frame_001360_00-00-46-608.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46514 - "GET /api/tasks?limit=200&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46524 - "GET /api/tasks?limit=200&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46520 - "GET /api/task/0ae15909-7c03-481a-8c2f-d3685c0bbde4 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46528 - "GET /api/task/0ae15909-7c03-481a-8c2f-d3685c0bbde4 HTTP/1.1" 404 Not Found
+[32m2026-05-10 15:18:53[0m | [1mINFO    [0m | [36mapp.api.upload[0m:[36mupload_video[0m:[36m79[0m | [1mVideo uploaded: 03606bb4-366d-417d-8f69-f1e9e530810a | 静兰大桥至三门江大桥河段.mp4 | 451.7 MB | 35476 frames[0m
+INFO:     127.0.0.1:37628 - "POST /api/upload HTTP/1.1" 201 Created
+[32m2026-05-10 15:18:59[0m | [33m[1mWARNING [0m | [36mapp.services.prompt_normalizer[0m:[36m_call_llm_normalize[0m:[36m184[0m | [33m[1mLLM prompt normalization failed: Expecting property name enclosed in double quotes: line 1 column 311 (char 310), using fallback[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.api.detect[0m:[36mstart_detection[0m:[36m101[0m | [1mUsing preset color filter for '菜地'[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.api.detect[0m:[36mstart_detection[0m:[36m103[0m | [1mPrompt normalized: '菜地，钓鱼台' → dino='vegetable field. fishing platform.' | label_mapping={'vegetable field': '菜地', 'fishing platform': '钓鱼台'} | color_filters=2 rules[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mcreate_task[0m:[36m70[0m | [1mTask created: 8249cf99-0f4b-4c77-b06c-924b7cb68a78 | prompt='菜地，钓鱼台'[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.api.detect[0m:[36mstart_detection[0m:[36m135[0m | [1mDetection task queued: 8249cf99-0f4b-4c77-b06c-924b7cb68a78 | video=03606bb4-366d-417d-8f69-f1e9e530810a | prompt='菜地，钓鱼台'[0m
+INFO:     127.0.0.1:34722 - "POST /api/detect HTTP/1.1" 202 Accepted
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_running[0m:[36m220[0m | [1mTask 8249cf99-0f4b-4c77-b06c-924b7cb68a78 started | total_frames=35476[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36mrun_detection_pipeline[0m:[36m101[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Processing video: 03606bb4-366d-417d-8f69-f1e9e530810a.mp4 | frames=35476 fps=29.30[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m230[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame quality check enabled: black<15.0, dark<30.0, bright>240.0[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m240[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Color filter enabled with 2 rules[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m254[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Adaptive keyframe detection enabled: interval=[10, 30], diff=0.05, hash=8, hist=0.85[0m
+[32m2026-05-10 15:18:59[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m263[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] VLM verification enabled, query='菜地，钓鱼台'[0m
+INFO:     127.0.0.1:34730 - "GET /api/stream/8249cf99-0f4b-4c77-b06c-924b7cb68a78 HTTP/1.1" 200 OK
+[32m2026-05-10 15:19:01[0m | [1mINFO    [0m | [36mapp.api.upload[0m:[36mupload_video[0m:[36m79[0m | [1mVideo uploaded: f1f1ab5b-3755-4245-bf80-cff3b61a483e | 静兰大桥至阳和大桥河段.mp4 | 504.8 MB | 39545 frames[0m
+INFO:     127.0.0.1:37630 - "POST /api/upload HTTP/1.1" 201 Created
+[32m2026-05-10 15:19:02[0m | [1mINFO    [0m | [36mapp.services.tracker[0m:[36m_load[0m:[36m119[0m | [1mByteTrack initialized (local yolox repo).[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.api.detect[0m:[36mstart_detection[0m:[36m103[0m | [1mPrompt normalized: '菜地，钓鱼台' → dino='vegetable field. fishing platform.' | label_mapping={'vegetable field': '菜地', 'farmland': '菜地', 'cultivated land': '菜地', 'fishing platform': '钓鱼台', 'fishing dock': '钓鱼台', 'platform': '钓鱼台'} | color_filters=3 rules[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mcreate_task[0m:[36m70[0m | [1mTask created: 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 | prompt='菜地，钓鱼台'[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.api.detect[0m:[36mstart_detection[0m:[36m135[0m | [1mDetection task queued: 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 | video=f1f1ab5b-3755-4245-bf80-cff3b61a483e | prompt='菜地，钓鱼台'[0m
+INFO:     127.0.0.1:34734 - "POST /api/detect HTTP/1.1" 202 Accepted
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_running[0m:[36m220[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 started | total_frames=39545[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36mrun_detection_pipeline[0m:[36m101[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Processing video: f1f1ab5b-3755-4245-bf80-cff3b61a483e.mp4 | frames=39545 fps=29.18[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m230[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame quality check enabled: black<15.0, dark<30.0, bright>240.0[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m240[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Color filter enabled with 3 rules[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m254[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Adaptive keyframe detection enabled: interval=[10, 30], diff=0.05, hash=8, hist=0.85[0m
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m263[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] VLM verification enabled, query='菜地为绿色或棕色的耕种区域，通常有规则的形状和边界；钓鱼台为灰色或深色的平台结构，通常位于水体边缘，用于垂钓活动。'[0m
+INFO:     127.0.0.1:51024 - "GET /api/stream/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 200 OK
+[32m2026-05-10 15:19:06[0m | [1mINFO    [0m | [36mapp.services.tracker[0m:[36m_load[0m:[36m119[0m | [1mByteTrack initialized (local yolox repo).[0m
+INFO:     127.0.0.1:37534 - "GET /api/frame/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/frame_001360_00-00-46-608.jpg HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:11[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mrequest_pause[0m:[36m150[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 pause requested.[0m
+[32m2026-05-10 15:22:11[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_paused[0m:[36m266[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 paused | frames=2729[0m
+INFO:     127.0.0.1:42196 - "POST /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/pause HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:12[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mrequest_resume[0m:[36m158[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 resume requested.[0m
+[32m2026-05-10 15:22:12[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_resumed[0m:[36m279[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 resumed | frames=2730[0m
+INFO:     127.0.0.1:42198 - "POST /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/resume HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mrequest_cancel[0m:[36m141[0m | [1mTask 8249cf99-0f4b-4c77-b06c-924b7cb68a78 cancel requested.[0m
+INFO:     127.0.0.1:46484 - "POST /api/task/8249cf99-0f4b-4c77-b06c-924b7cb68a78/cancel HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m280[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Cancelled at frame 3246.[0m
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m468[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Processed 3246 frames. Quality skipped: 2973 (91.6%)[0m
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m473[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Adaptive keyframe detections: 273[0m
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_cancelled[0m:[36m293[0m | [1mTask 8249cf99-0f4b-4c77-b06c-924b7cb68a78 cancelled | frames=3246[0m
+[32m2026-05-10 15:22:25[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36mrun_detection_pipeline[0m:[36m142[0m | [1m[8249cf99-0f4b-4c77-b06c-924b7cb68a78] Pipeline cancelled.[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mrequest_terminate[0m:[36m171[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 terminate requested.[0m
+INFO:     127.0.0.1:56560 - "POST /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/terminate HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m283[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Manually terminated at frame 3093.[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m468[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Processed 3093 frames. Quality skipped: 2821 (91.2%)[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_sync_pipeline[0m:[36m473[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Adaptive keyframe detections: 272[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.task_manager[0m:[36mset_early_terminated[0m:[36m310[0m | [1mTask 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 early terminated: User manually terminated after processing 3093 frames | frames=3093[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36m_package_zip[0m:[36m564[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] ZIP created: results/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/results.zip | Saved 1/3093 frames (detections_only mode)[0m
+[32m2026-05-10 15:22:33[0m | [1mINFO    [0m | [36mapp.services.pipeline[0m:[36mrun_detection_pipeline[0m:[36m165[0m | [1m[8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Pipeline manually terminated and packaged.[0m
+INFO:     127.0.0.1:56574 - "GET /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56580 - "GET /api/download/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53768 - "GET /api/tasks?limit=200&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53772 - "GET /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53774 - "GET /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53784 - "GET /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53794 - "GET /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:56[0m | [1mINFO    [0m | [36mapp.api.history[0m:[36mdelete_task[0m:[36m195[0m | [1mdeleted task 8249cf99-0f4b-4c77-b06c-924b7cb68a78 (video_id=03606bb4-366d-417d-8f69-f1e9e530810a, upload_purged=True)[0m
+INFO:     127.0.0.1:35034 - "DELETE /api/task/8249cf99-0f4b-4c77-b06c-924b7cb68a78 HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:35044 - "GET /api/tasks?limit=200&offset=0 HTTP/1.1" 200 OK
+[32m2026-05-10 15:22:59[0m | [1mINFO    [0m | [36mapp.api.history[0m:[36mdelete_task[0m:[36m195[0m | [1mdeleted task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 (video_id=f1f1ab5b-3755-4245-bf80-cff3b61a483e, upload_purged=True)[0m
+INFO:     127.0.0.1:35054 - "DELETE /api/task/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:35064 - "GET /api/tasks?limit=200&offset=0 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+[32m2026-05-10 16:27:55[0m | [1mINFO    [0m | [36mapp.main[0m:[36mlifespan[0m:[36m96[0m | [1mVideo Detection Agent shutting down.[0m
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2660834]

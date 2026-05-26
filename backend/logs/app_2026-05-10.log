@@ -1,0 +1,1147 @@
+2026-05-10 15:14:40 | INFO     | app.main:lifespan:96 | Video Detection Agent shutting down.
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:44 | ============================================================
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:45 | Video Detection Agent starting up
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:46 |   Model:  yolo_world
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:47 |   Device: cuda:0
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:48 |   Upload: uploads
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:49 |   Results:results
+2026-05-10 15:17:17 | INFO     | app.main:lifespan:50 | ============================================================
+2026-05-10 15:17:17 | INFO     | app.db.session:init_db:43 | DB schema ensured (detection_tasks)
+2026-05-10 15:17:18 | INFO     | yolo_world_detector:load:61 | Loading YOLO-World model: /home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt
+2026-05-10 15:17:18 | INFO     | yolo_world_detector:load:67 | Using local model file: /home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt
+2026-05-10 15:17:18 | INFO     | yolo_world_detector:load:85 | YOLO-World loaded successfully on cuda:0
+2026-05-10 15:17:18 | INFO     | yolo_world_detector:load:86 | SAHI config: slice=640x640, overlap=0.2x0.2
+2026-05-10 15:17:18 | INFO     | app.services.detector:get_detector:381 | Detector ready: yolo_world on cuda:0
+2026-05-10 15:18:53 | INFO     | app.api.upload:upload_video:79 | Video uploaded: 03606bb4-366d-417d-8f69-f1e9e530810a | 静兰大桥至三门江大桥河段.mp4 | 451.7 MB | 35476 frames
+2026-05-10 15:18:59 | WARNING  | app.services.prompt_normalizer:_call_llm_normalize:184 | LLM prompt normalization failed: Expecting property name enclosed in double quotes: line 1 column 311 (char 310), using fallback
+2026-05-10 15:18:59 | INFO     | app.api.detect:start_detection:101 | Using preset color filter for '菜地'
+2026-05-10 15:18:59 | INFO     | app.api.detect:start_detection:103 | Prompt normalized: '菜地，钓鱼台' → dino='vegetable field. fishing platform.' | label_mapping={'vegetable field': '菜地', 'fishing platform': '钓鱼台'} | color_filters=2 rules
+2026-05-10 15:18:59 | INFO     | app.services.task_manager:create_task:70 | Task created: 8249cf99-0f4b-4c77-b06c-924b7cb68a78 | prompt='菜地，钓鱼台'
+2026-05-10 15:18:59 | INFO     | app.api.detect:start_detection:135 | Detection task queued: 8249cf99-0f4b-4c77-b06c-924b7cb68a78 | video=03606bb4-366d-417d-8f69-f1e9e530810a | prompt='菜地，钓鱼台'
+2026-05-10 15:18:59 | INFO     | app.services.task_manager:set_running:220 | Task 8249cf99-0f4b-4c77-b06c-924b7cb68a78 started | total_frames=35476
+2026-05-10 15:18:59 | INFO     | app.services.pipeline:run_detection_pipeline:101 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Processing video: 03606bb4-366d-417d-8f69-f1e9e530810a.mp4 | frames=35476 fps=29.30
+2026-05-10 15:18:59 | INFO     | app.services.pipeline:_sync_pipeline:230 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame quality check enabled: black<15.0, dark<30.0, bright>240.0
+2026-05-10 15:18:59 | INFO     | app.services.pipeline:_sync_pipeline:240 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Color filter enabled with 2 rules
+2026-05-10 15:18:59 | INFO     | app.services.pipeline:_sync_pipeline:254 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Adaptive keyframe detection enabled: interval=[10, 30], diff=0.05, hash=8, hist=0.85
+2026-05-10 15:18:59 | INFO     | app.services.pipeline:_sync_pipeline:263 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] VLM verification enabled, query='菜地，钓鱼台'
+2026-05-10 15:19:01 | INFO     | app.api.upload:upload_video:79 | Video uploaded: f1f1ab5b-3755-4245-bf80-cff3b61a483e | 静兰大桥至阳和大桥河段.mp4 | 504.8 MB | 39545 frames
+2026-05-10 15:19:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:02 | INFO     | app.services.tracker:_load:119 | ByteTrack initialized (local yolox repo).
+2026-05-10 15:19:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 30: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 60: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 90: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 120: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:06 | INFO     | app.api.detect:start_detection:103 | Prompt normalized: '菜地，钓鱼台' → dino='vegetable field. fishing platform.' | label_mapping={'vegetable field': '菜地', 'farmland': '菜地', 'cultivated land': '菜地', 'fishing platform': '钓鱼台', 'fishing dock': '钓鱼台', 'platform': '钓鱼台'} | color_filters=3 rules
+2026-05-10 15:19:06 | INFO     | app.services.task_manager:create_task:70 | Task created: 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 | prompt='菜地，钓鱼台'
+2026-05-10 15:19:06 | INFO     | app.api.detect:start_detection:135 | Detection task queued: 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 | video=f1f1ab5b-3755-4245-bf80-cff3b61a483e | prompt='菜地，钓鱼台'
+2026-05-10 15:19:06 | INFO     | app.services.task_manager:set_running:220 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 started | total_frames=39545
+2026-05-10 15:19:06 | INFO     | app.services.pipeline:run_detection_pipeline:101 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Processing video: f1f1ab5b-3755-4245-bf80-cff3b61a483e.mp4 | frames=39545 fps=29.18
+2026-05-10 15:19:06 | INFO     | app.services.pipeline:_sync_pipeline:230 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame quality check enabled: black<15.0, dark<30.0, bright>240.0
+2026-05-10 15:19:06 | INFO     | app.services.pipeline:_sync_pipeline:240 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Color filter enabled with 3 rules
+2026-05-10 15:19:06 | INFO     | app.services.pipeline:_sync_pipeline:254 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Adaptive keyframe detection enabled: interval=[10, 30], diff=0.05, hash=8, hist=0.85
+2026-05-10 15:19:06 | INFO     | app.services.pipeline:_sync_pipeline:263 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] VLM verification enabled, query='菜地为绿色或棕色的耕种区域，通常有规则的形状和边界；钓鱼台为灰色或深色的平台结构，通常位于水体边缘，用于垂钓活动。'
+2026-05-10 15:19:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:06 | INFO     | app.services.tracker:_load:119 | ByteTrack initialized (local yolox repo).
+2026-05-10 15:19:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 150: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 30: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 180: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 40: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 50: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 210: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 60: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 70: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 240: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 80: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 90: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 270: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 100: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 110: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 300: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 120: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 330: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 130: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 340: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 140: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 350: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:19:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 150: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 160: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 380: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 170: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 180: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 410: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 190: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 420: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 200: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 430: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 210: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 440: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 220: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 450: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 230: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 460: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 240: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 470: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 250: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 480: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 260: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 490: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 270: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 500: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 280: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 510: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 290: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 520: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 300: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 530: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 310: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 540: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 550: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 320: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 560: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 330: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 570: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 340: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 580: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 350: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 590: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 360: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 600: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 370: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:19:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 610: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 620: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 400: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 630: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 410: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:19:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 640: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 650: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 440: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 660: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 670: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 470: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 680: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 690: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 700: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 500: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 710: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 510: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 720: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 520: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 730: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 530: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 740: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 540: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 750: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 550: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 760: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 560: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 770: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 570: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 780: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 580: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:19:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 790: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 800: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 610: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 810: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 820: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 830: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 640: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 840: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 850: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 670: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 860: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 870: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:19:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 700: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 880: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:19:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 730: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:19:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 910: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:19:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:19:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 920: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 760: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 950: Detection triggered (reason=interval_reached(30), next_interval=12)
+2026-05-10 15:20:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 790: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 962: Detection triggered (reason=interval_reached(12), next_interval=30)
+2026-05-10 15:20:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 820: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 992: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1002: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 850: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1012: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1022: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 880: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1032: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 910: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1042: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1052: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 940: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1062: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 950: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1072: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 960: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1082: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 970: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1092: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 980: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1102: Detection triggered (reason=interval_reached(10), next_interval=11)
+2026-05-10 15:20:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 990: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1113: Detection triggered (reason=interval_reached(11), next_interval=10)
+2026-05-10 15:20:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1000: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1123: Detection triggered (reason=interval_reached(10), next_interval=13)
+2026-05-10 15:20:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1010: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1020: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1136: Detection triggered (reason=interval_reached(13), next_interval=10)
+2026-05-10 15:20:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1030: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1146: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1040: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1050: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1176: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1060: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1186: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1070: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1080: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1216: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1090: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1226: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1100: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1110: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1256: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1120: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1266: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1130: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1140: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1296: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1150: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1160: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1326: Detection triggered (reason=interval_reached(30), next_interval=30)
+2026-05-10 15:20:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1170: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1180: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1356: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1190: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1366: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:20:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1200: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1210: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1396: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:20:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1220: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1406: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1230: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1416: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1240: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1426: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1250: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1436: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1260: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1446: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1270: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1456: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1280: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1466: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1290: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1476: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1300: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1486: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1310: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1496: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1320: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1506: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1330: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1516: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1340: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1526: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1350: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1536: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1360: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1546: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 1 objects
+2026-05-10 15:20:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1556: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1566: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1576: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1586: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1596: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1606: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1616: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1626: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1636: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1646: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1656: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1666: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:42 | DEBUG    | app.services.fusion_engine:apply_vlm_result:171 | Track 1 VLM: is_target=False vlm_conf=0.00 dino_avg=0.39 hit_count=1 final=0.15 status=candidate reason=图像中没有清晰的菜地或钓鱼台，主要显示的是树木和植被，无法识别用户目标。
+2026-05-10 15:20:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1676: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1370: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1686: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 1 objects
+2026-05-10 15:20:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1380: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1696: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1390: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1706: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1400: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1716: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1410: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1726: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1420: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1736: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1430: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1746: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1440: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1756: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1450: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1766: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1460: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1776: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1470: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1786: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1480: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1796: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1490: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1806: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1500: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1816: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1510: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1826: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1520: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1836: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1530: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1846: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1540: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1856: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1550: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1866: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1560: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1876: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1570: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1886: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1580: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1896: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1590: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1906: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:20:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:20:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1600: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1916: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1610: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1926: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:21:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1620: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1630: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1956: Detection triggered (reason=interval_reached(30), next_interval=23)
+2026-05-10 15:21:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1640: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1650: Detection triggered (reason=interval_reached(10), next_interval=12)
+2026-05-10 15:21:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 1979: Detection triggered (reason=interval_reached(23), next_interval=30)
+2026-05-10 15:21:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1662: Detection triggered (reason=interval_reached(12), next_interval=30)
+2026-05-10 15:21:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2009: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:21:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1692: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:21:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2019: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1702: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2029: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1712: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2039: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1722: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2049: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1732: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2059: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1742: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2069: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1752: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2079: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1762: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2089: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1772: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2099: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1782: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2109: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1792: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2119: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1802: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2129: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1812: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2139: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1822: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2149: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1832: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2159: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1842: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2169: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1852: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2179: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1862: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2189: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1872: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2199: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1882: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2209: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1892: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2219: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1902: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2229: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1912: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2239: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1922: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2249: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1932: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2259: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1942: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2269: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1952: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2279: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1962: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2289: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1972: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2299: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1982: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2309: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 1992: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2319: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2002: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2329: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2012: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2339: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2022: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2349: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2032: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2359: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2042: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2369: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2052: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2379: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2062: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2389: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2072: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2399: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2082: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2409: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2092: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2419: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2102: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2429: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2112: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2439: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2122: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2449: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2132: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2459: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2142: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2469: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2152: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2479: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2162: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2489: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2172: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2499: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2182: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2509: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:34 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2192: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:34 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2519: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2202: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2529: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:35 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:35 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2212: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2539: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:36 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2222: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:36 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2549: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2232: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2559: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:37 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:37 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2242: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2569: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:38 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2252: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:38 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2579: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2262: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:39 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2589: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:39 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2272: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2599: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:40 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2282: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:40 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2609: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2292: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:41 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2619: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:41 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2302: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2629: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:42 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:42 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2312: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2639: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2322: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:43 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2649: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:43 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2332: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2659: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:44 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:44 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2342: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2669: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2352: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:45 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2679: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:45 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2362: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2689: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:46 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2372: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:46 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2699: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2382: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2709: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:47 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:47 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2392: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2719: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2402: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:48 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2729: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:48 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2412: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2739: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:49 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:49 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2422: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2749: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:50 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2432: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:50 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2759: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2442: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:51 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2769: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:51 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2452: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2779: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:52 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2462: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:52 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2789: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2472: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:53 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2799: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:53 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2482: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:54 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2809: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:54 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2492: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2819: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:55 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:55 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2502: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2829: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2512: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:56 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2839: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:56 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2522: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:57 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2849: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:57 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2532: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2859: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:58 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2542: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:58 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2869: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2552: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:21:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:59 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:21:59 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2879: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2562: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2889: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:00 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2572: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:00 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2899: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2582: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:01 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:01 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2909: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2592: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2919: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:02 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2602: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:02 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2929: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2612: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:03 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:03 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2939: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2622: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2949: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:04 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2632: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:04 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2959: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2642: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:05 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:05 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2969: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2652: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2979: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:06 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2662: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:06 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2989: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2672: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:07 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:07 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 2999: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2682: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3009: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:08 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2692: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:08 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3019: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2702: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:09 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3029: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:09 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2712: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3039: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:10 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:10 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2722: Detection triggered (reason=interval_reached(10), next_interval=30)
+2026-05-10 15:22:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3049: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:11 | INFO     | app.services.task_manager:request_pause:150 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 pause requested.
+2026-05-10 15:22:11 | INFO     | app.services.task_manager:set_paused:266 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 paused | frames=2729
+2026-05-10 15:22:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:11 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3059: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:11 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3069: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:12 | INFO     | app.services.task_manager:request_resume:158 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 resume requested.
+2026-05-10 15:22:12 | INFO     | app.services.task_manager:set_resumed:279 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 resumed | frames=2730
+2026-05-10 15:22:12 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3079: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:12 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2752: Detection triggered (reason=interval_reached(30), next_interval=10)
+2026-05-10 15:22:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3089: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:13 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:13 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2762: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3099: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:14 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:14 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2772: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3109: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:15 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2782: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:15 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3119: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:16 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2792: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:16 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3129: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:17 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2802: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:17 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3139: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2812: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:18 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3149: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:18 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2822: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3159: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:19 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:19 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2832: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3169: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:20 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2842: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:20 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3179: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2852: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:21 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3189: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:21 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2862: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3199: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:22 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2872: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:22 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3209: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2882: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:23 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:23 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3219: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2892: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3229: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2902: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:24 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:24 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Frame 3239: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2912: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:25 | INFO     | app.services.task_manager:request_cancel:141 | Task 8249cf99-0f4b-4c77-b06c-924b7cb68a78 cancel requested.
+2026-05-10 15:22:25 | INFO     | app.services.pipeline:_sync_pipeline:280 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Cancelled at frame 3246.
+2026-05-10 15:22:25 | INFO     | app.services.pipeline:_sync_pipeline:468 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Processed 3246 frames. Quality skipped: 2973 (91.6%)
+2026-05-10 15:22:25 | INFO     | app.services.pipeline:_sync_pipeline:473 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Adaptive keyframe detections: 273
+2026-05-10 15:22:25 | INFO     | app.services.task_manager:set_cancelled:293 | Task 8249cf99-0f4b-4c77-b06c-924b7cb68a78 cancelled | frames=3246
+2026-05-10 15:22:25 | INFO     | app.services.pipeline:run_detection_pipeline:142 | [8249cf99-0f4b-4c77-b06c-924b7cb68a78] Pipeline cancelled.
+2026-05-10 15:22:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:25 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2922: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:25 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2932: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:26 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2942: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:26 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2952: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:27 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2962: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:27 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2972: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2982: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:28 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:28 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 2992: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3002: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:29 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:29 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3012: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3022: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:30 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:30 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3032: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3042: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:31 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3052: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:31 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3062: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:32 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3072: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:32 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3082: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:33 | DEBUG    | app.services.pipeline:_sync_pipeline:321 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Frame 3092: Detection triggered (reason=interval_reached(10), next_interval=10)
+2026-05-10 15:22:33 | INFO     | app.services.task_manager:request_terminate:171 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 terminate requested.
+2026-05-10 15:22:33 | DEBUG    | yolo_world_detector:_predict_with_sahi:264 | SAHI detected 0 objects
+2026-05-10 15:22:33 | INFO     | app.services.pipeline:_sync_pipeline:283 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Manually terminated at frame 3093.
+2026-05-10 15:22:33 | INFO     | app.services.pipeline:_sync_pipeline:468 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Processed 3093 frames. Quality skipped: 2821 (91.2%)
+2026-05-10 15:22:33 | INFO     | app.services.pipeline:_sync_pipeline:473 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Adaptive keyframe detections: 272
+2026-05-10 15:22:33 | INFO     | app.services.task_manager:set_early_terminated:310 | Task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 early terminated: User manually terminated after processing 3093 frames | frames=3093
+2026-05-10 15:22:33 | INFO     | app.services.pipeline:_package_zip:564 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] ZIP created: results/8fd5eb44-f8c5-46f8-a581-e6d203adc2a3/results.zip | Saved 1/3093 frames (detections_only mode)
+2026-05-10 15:22:33 | INFO     | app.services.pipeline:run_detection_pipeline:165 | [8fd5eb44-f8c5-46f8-a581-e6d203adc2a3] Pipeline manually terminated and packaged.
+2026-05-10 15:22:56 | INFO     | app.api.history:delete_task:195 | deleted task 8249cf99-0f4b-4c77-b06c-924b7cb68a78 (video_id=03606bb4-366d-417d-8f69-f1e9e530810a, upload_purged=True)
+2026-05-10 15:22:59 | INFO     | app.api.history:delete_task:195 | deleted task 8fd5eb44-f8c5-46f8-a581-e6d203adc2a3 (video_id=f1f1ab5b-3755-4245-bf80-cff3b61a483e, upload_purged=True)
+2026-05-10 16:27:55 | INFO     | app.main:lifespan:96 | Video Detection Agent shutting down.
