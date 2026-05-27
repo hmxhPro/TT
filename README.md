@@ -12,6 +12,7 @@
 - [各模块职责](#各模块职责)
 - [快速启动](#快速启动)
 - [大模型 (VLM) 配置](#大模型-vlm-配置)
+- [任务历史持久化 (PostgreSQL)](#任务历史持久化-postgresql)
 - [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)
 - [API 接口说明](#api-接口说明)
 - [示例请求与返回](#示例请求与返回)
@@ -33,6 +34,7 @@
 | **大模型 (VLM)** | **MiniCPM-V**（默认）/ 任意 OpenAI 兼容模型 | **Prompt 标准化 + 检测结果语义复核**，支持本地 vLLM 与远端 API（见 [大模型 (VLM) 配置](#大模型-vlm-配置)） |
 | 目标跟踪 | **ByteTrack** | 无需重检测的多目标跟踪，大幅降低 GPU 开销 |
 | 实时推送 | **Server-Sent Events (SSE)** | 逐帧推送，前端实时刷新 |
+| **任务持久化** | **PostgreSQL + SQLAlchemy 2.x (async / asyncpg)** | **历史任务、状态、进度落库；DB 不可用时降级为内存模式，不影响检测主路径**（见 [任务历史持久化](#任务历史持久化-postgresql)） |
 | 前端 | **React 18 + Vite** | 快速构建、热更新；Tailwind CSS 样式 |
 | 部署环境 | Linux + NVIDIA GPU (CUDA) | 推荐 RTX 3090 / A100 或更高 |
 
@@ -68,10 +70,14 @@ sod/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── upload.py          # POST /api/upload
-│   │   │   └── detect.py          # POST /api/detect, GET /api/task, /stream, /download
+│   │   │   ├── detect.py          # POST /api/detect, GET /api/task, /stream, /download
+│   │   │   └── history.py         # GET /api/tasks, GET /api/task/{id}/frames, DELETE /api/task/{id}, DELETE /api/tasks
 │   │   ├── core/
 │   │   │   ├── config.py          # Pydantic Settings（读 .env）
 │   │   │   └── logging.py         # Loguru 日志配置
+│   │   ├── db/
+│   │   │   ├── session.py         # SQLAlchemy 异步引擎 + AsyncSessionLocal + init_db()
+│   │   │   └── models.py          # ORM 模型：detection_tasks 任务历史表
 │   │   ├── models/
 │   │   │   └── schemas.py         # 所有 Pydantic 数据模型
 │   │   ├── services/
@@ -94,6 +100,8 @@ sod/
 │   │   ├── dataset.yaml.example   # 训练数据集模板
 │   │   ├── TRAINING.md            # YOLOE 训练详细文档
 │   │   └── README.md
+│   ├── scripts/
+│   │   └── init_postgres.sh       # PostgreSQL 一键初始化（角色 / 库 / 权限 / .env 写入）
 │   ├── requirements.txt
 │   └── .env.example
 │
@@ -130,6 +138,9 @@ sod/
 | `app/core/config.py` | 统一配置（通过 `.env` 注入，支持多环境） |
 | `app/api/upload.py` | 流式接收大视频文件，读取元数据，返回 `video_id` |
 | `app/api/detect.py` | 创建检测任务、SSE 流、ZIP 下载 |
+| `app/api/history.py` | 任务历史 CRUD：列表分页 / 帧文件清单 / 单任务删除 / 全量清空（含磁盘联动） |
+| `app/db/session.py` | SQLAlchemy 异步引擎与会话工厂；`init_db()` 启动时自动建表 |
+| `app/db/models.py` | ORM 模型 `TaskRecord` ↔ 表 `detection_tasks`（任务状态、进度、时间戳等） |
 | `app/services/detector.py` | 封装 YOLOE / YOLO-World / Grounding DINO / Florence-2，统一接口 |
 | `app/services/tracker.py` | 封装 ByteTrack，提供持久 `track_id` |
 | `app/services/visualizer.py` | 绘制高对比度检测框、标签、时间戳 |
@@ -375,6 +386,99 @@ fusion_engine.apply_vlm_result(...)
 
 ---
 
+## 任务历史持久化 (PostgreSQL)
+
+后端使用 **PostgreSQL** 持久化检测任务的元数据与状态，配合 SQLAlchemy 2.x 的 **async ORM** + `asyncpg` 驱动，全异步、不阻塞检测流水线。
+
+### 设计要点
+
+- **单表 `detection_tasks`**：一行 = 一个检测任务。表结构由 `app/db/models.py` 中的 `TaskRecord` 定义，启动时通过 `init_db()` 自动建表（MVP 不接 Alembic 迁移）。
+- **懒连接 + 启动不崩**：引擎在 import 时创建，asyncpg 连接池在首次查询才建立——配置错误或数据库不可达**不会**阻止后端启动，错误在第一次查询时抛出并被持久层 `try/except` 捕获，**检测主路径不依赖 DB**。
+- **DB 不可用时降级**：所有历史接口在 DB 失联时返回 `503 Service Unavailable`，前端可继续上传视频和跑检测，只是看不到历史；任务在内存中 `task_manager` 仍正常调度。
+- **磁盘联动**：删除任务时同步清理 `RESULTS_DIR/{task_id}/`（帧 JPG + ZIP）；对 `uploads/{video_id}.*` 做引用计数，**仅当没有其它任务还在引用该视频时**才删上传文件。
+- **活动任务保护**：处于 `pending / running / paused / packaging` 的任务无法被删除，必须先取消，避免误清理在跑任务。
+
+### 表结构（`detection_tasks`）
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| `task_id` | `VARCHAR(36)` PK | 任务 UUID |
+| `video_id` | `VARCHAR(36)` | 关联上传视频 ID |
+| `video_filename` | `VARCHAR(512)` | 原始文件名（可空） |
+| `prompt` | `TEXT` | 用户的自然语言检测目标 |
+| `status` | `VARCHAR(32)` *(indexed)* | `pending` / `running` / `paused` / `packaging` / `finished` / `failed` / `cancelled` |
+| `progress` | `FLOAT` | 0.0 – 1.0 |
+| `total_frames` / `processed_frames` | `INT` | 帧计数 |
+| `error` | `TEXT` | 失败原因 |
+| `zip_ready` | `BOOL` | ZIP 是否可下载 |
+| `early_terminated` / `termination_reason` | `BOOL` / `TEXT` | 是否提前终止及原因 |
+| `created_at` *(indexed)* / `updated_at` / `finished_at` | `TIMESTAMPTZ` | 时间戳（带时区） |
+
+### 配置
+
+`backend/.env`：
+
+```env
+# 默认值（仅供本地开发）；生产请用 init_postgres.sh 自动生成
+DATABASE_URL=postgresql+asyncpg://sod_app:<password>@localhost:5432/sod
+
+# 调试用：true 时打印每条 SQL
+DATABASE_ECHO=false
+```
+
+> URL **必须**带 `+asyncpg` 驱动后缀，否则 SQLAlchemy 会回退到同步驱动。
+
+### 一键初始化脚本
+
+`backend/scripts/init_postgres.sh` 提供幂等的本地初始化：
+
+```bash
+sudo bash backend/scripts/init_postgres.sh
+```
+
+脚本做了什么：
+
+1. 检查 `psql` / `openssl` / `python3` 可用且 PostgreSQL 在监听
+2. 以本机 `postgres` OS 用户（peer auth）执行 DDL
+3. 创建（或复用）角色 `sod_app`，密码：复用 `.env` 中已有 `DATABASE_URL` 的密码，否则随机生成 24 位
+4. 创建（或确认）数据库 `sod`，owner 设为 `sod_app`
+5. 授权 `public` schema
+6. 通过 TCP + 密码登录验证一次（即应用真正走的路径）
+7. 把 `DATABASE_URL` 写入或更新 `backend/.env`，并把 `.env` 权限收紧为 `600`
+8. 输出脱敏后的连接串
+
+可通过环境变量覆盖默认名：
+
+```bash
+SOD_DB_NAME=mydb SOD_DB_USER=myrole SOD_DB_HOST=127.0.0.1 \
+    sudo bash backend/scripts/init_postgres.sh
+```
+
+### 历史相关 API
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| `GET` | `/api/tasks?limit=100&offset=0&date=YYYY-MM-DD` | 分页列出历史任务（按 `created_at` 倒序）；可按日期过滤 |
+| `GET` | `/api/task/{task_id}/frames` | 列出该任务保存的所有标注帧 JPG 文件名 |
+| `DELETE` | `/api/task/{task_id}` | 删除单个任务：DB 行 + 结果目录 + ZIP + 上传视频（引用计数后） |
+| `DELETE` | `/api/tasks` | **全量清空**：所有 DB 行 + `RESULTS_DIR` + `UPLOAD_DIR` |
+
+> 后两个删除接口在有任务仍处于活动状态时会返回 `409 Conflict`。
+
+### 表结构升级
+
+当前 MVP 直接 `create_all`，没有迁移工具。Schema 演进时建议接入 **Alembic**：
+
+```bash
+pip install alembic
+alembic init alembic
+# 配置 sqlalchemy.url 指向 settings.DATABASE_URL
+alembic revision --autogenerate -m "add new column"
+alembic upgrade head
+```
+
+---
+
 ## 训练自定义 YOLOE 模型
 
 支持基于自有数据集对 YOLOE 进行微调或从头训练。完整流程见 [`backend/YOLOWorld/TRAINING.md`](backend/YOLOWorld/TRAINING.md)，本节列出最关键的几步：
@@ -555,6 +659,76 @@ results.zip
 ├── ...
 ├── results.json
 └── results.csv
+```
+
+---
+
+### `GET /api/tasks`
+
+分页列出历史任务（按创建时间倒序）。
+
+**查询参数**：
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `limit` | int | 1–500，默认 100 |
+| `offset` | int | 默认 0 |
+| `date` | string | 可选，按 `YYYY-MM-DD` 过滤到某天（服务器本地时区） |
+
+**响应**：
+
+```json
+[
+  {
+    "task_id": "9a8b7c6d-...",
+    "video_id": "3f4a1b2c-...",
+    "video_filename": "my_garden.mp4",
+    "prompt": "帮我检测视频中的菜园",
+    "status": "finished",
+    "progress": 1.0,
+    "processed_frames": 915,
+    "total_frames": 915,
+    "zip_ready": true,
+    "early_terminated": false,
+    "created_at": "2025-05-10T08:32:11+08:00",
+    "finished_at": "2025-05-10T08:38:47+08:00"
+  }
+]
+```
+
+数据库不可达时返回 `503`。
+
+---
+
+### `GET /api/task/{task_id}/frames`
+
+列出指定任务保存的所有标注帧文件名（升序）。前端用它配合 `/api/frame/{task_id}/{filename}` 拼接成可访问的图片 URL。
+
+**响应**：
+
+```json
+["frame_000000_00-00-00-000.jpg", "frame_000005_00-00-00-167.jpg", "..."]
+```
+
+无对应结果目录时返回 `404`。
+
+---
+
+### `DELETE /api/task/{task_id}`
+
+删除单个任务：DB 行 + `RESULTS_DIR/{task_id}/`（含 ZIP）+ 引用计数后的上传视频 + 内存中的 `task_manager` 记录。
+
+- 任务处于 `pending / running / paused / packaging` 时返回 `409 Conflict`
+- 成功返回 `204 No Content`
+
+---
+
+### `DELETE /api/tasks`
+
+**全量清空**：所有 DB 行 + `RESULTS_DIR` 与 `UPLOAD_DIR` 下全部内容 + 内存全部状态。仍有活动任务时返回 `409`。
+
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
 ```
 
 ---
@@ -773,6 +947,9 @@ while True:
 | PyTorch | 2.1.0 | 推理 / 训练 |
 | CUDA | 11.8 | GPU 加速 |
 | FastAPI | 0.111.0 | 后端框架 |
+| **PostgreSQL** | **13+** | **任务历史数据库** |
+| **SQLAlchemy** | **2.0** | **异步 ORM（async session + Mapped 列）** |
+| **asyncpg** | **0.29** | **PostgreSQL 异步驱动** |
 | **ultralytics** | **8.3.0** | **YOLOE / YOLO-World 推理与训练** |
 | **sahi** | **0.11.18** | **小目标切片推理** |
 | **httpx** | **0.27.0** | **调用 VLM（本地或远端 OpenAI 兼容 API）** |
