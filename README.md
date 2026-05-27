@@ -11,6 +11,7 @@
 - [项目目录结构](#项目目录结构)
 - [各模块职责](#各模块职责)
 - [快速启动](#快速启动)
+- [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)
 - [API 接口说明](#api-接口说明)
 - [示例请求与返回](#示例请求与返回)
 - [检测可视化效果](#检测可视化效果)
@@ -25,19 +26,22 @@
 | 层次 | 技术选型 | 说明 |
 |------|---------|------|
 | 后端框架 | **FastAPI** | 异步高性能，原生支持 SSE / WebSocket |
-| 检测模型 | **Grounding DINO** | 开放词汇目标检测，自然语言→检测框 |
-| 备选模型 | **Florence-2** | 微软多模态大模型，同样支持 OVD |
+| 主检测模型 | **YOLOE**（Ultralytics） | 开放词汇 YOLO，速度快、显存低，**支持自定义训练**（见 [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)） |
+| 备选模型 | **YOLO-World** / **Grounding DINO** / **Florence-2** | 同样支持开放词汇检测，可按需切换 |
+| 小目标增强 | **SAHI** | 大图自动切片推理，显著提升小目标召回 |
 | 目标跟踪 | **ByteTrack** | 无需重检测的多目标跟踪，大幅降低 GPU 开销 |
 | 实时推送 | **Server-Sent Events (SSE)** | 逐帧推送，前端实时刷新 |
 | 前端 | **React 18 + Vite** | 快速构建、热更新；Tailwind CSS 样式 |
 | 部署环境 | Linux + NVIDIA GPU (CUDA) | 推荐 RTX 3090 / A100 或更高 |
+
+> 当前默认后端为 **YOLOE**（`yoloe-11l-seg.pt`），通过 Ultralytics 提供，可在 `backend/.env` 的 `DETECTION_MODEL` / `YOLO_WORLD_MODEL` 中切换。
 
 ### 检测 + 跟踪流程（速度优先）
 
 ```
 视频帧序列
     │
-    ├── 每隔 N 帧（默认 N=5）→ Grounding DINO 全量检测（GPU）
+    ├── 每隔 N 帧（默认 N=5）→ YOLOE 全量检测（GPU，可选 SAHI 切片）
     │                           ↓
     │                        ByteTrack.update(detections)  ← 分配持久 track_id
     │
@@ -65,7 +69,7 @@ sod/
 │   │   ├── models/
 │   │   │   └── schemas.py         # 所有 Pydantic 数据模型
 │   │   ├── services/
-│   │   │   ├── detector.py        # Grounding DINO / Florence-2 检测器抽象
+│   │   │   ├── detector.py        # YOLOE / YOLO-World / Grounding DINO / Florence-2 检测器抽象
 │   │   │   ├── tracker.py         # ByteTrack 封装
 │   │   │   ├── visualizer.py      # 框 + 标签绘制、base64 编码
 │   │   │   ├── pipeline.py        # 主视频处理流水线
@@ -73,6 +77,12 @@ sod/
 │   │   ├── utils/
 │   │   │   └── video_utils.py     # 视频元数据读取、时间戳格式化
 │   │   └── main.py                # FastAPI 入口 + 路由注册
+│   ├── YOLOWorld/                 # YOLOE / YOLO-World 后端 + SAHI 切片
+│   │   ├── yolo_world_detector.py # YOLOE / YOLO-World 推理实现
+│   │   ├── train_yoloe.py         # YOLOE 训练 CLI
+│   │   ├── dataset.yaml.example   # 训练数据集模板
+│   │   ├── TRAINING.md            # YOLOE 训练详细文档
+│   │   └── README.md
 │   ├── requirements.txt
 │   └── .env.example
 │
@@ -135,27 +145,34 @@ source venv/bin/activate
 ```bash
 cd backend
 pip install -r requirements.txt
+```
 
-# 安装 Grounding DINO（二选一）
-# 方式 A：官方源码安装（推荐，获得最新版本）
+`requirements.txt` 已包含 **YOLOE 默认后端** 所需的 `ultralytics>=8.3.0` 与 `sahi>=0.11.18`。  
+YOLOE 模型权重首次使用时会自动下载到 `~/.cache/ultralytics/`，离线环境请提前手动下载 `yoloe-11l-seg.pt` 并把绝对路径写入 `backend/.env` 的 `YOLO_WORLD_MODEL`。
+
+如需 **Grounding DINO 或 Florence-2** 后端，再额外安装：
+
+```bash
+# Grounding DINO（二选一）
 pip install git+https://github.com/IDEA-Research/GroundingDINO.git
-
-# 方式 B：PyPI 包
-pip install groundingdino-py
+# 或：pip install groundingdino-py
 
 # 下载 Grounding DINO 权重
 mkdir -p models/groundingdino/weights models/groundingdino/config
 wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth \
      -O models/groundingdino/weights/groundingdino_swint_ogc.pth
 
-# 安装 ByteTrack
+# ByteTrack
 pip install git+https://github.com/ifzhang/ByteTrack.git
-# 或者
-pip install bytetracker
+# 或：pip install bytetracker
+```
 
-# 复制并编辑配置
+复制并编辑配置：
+
+```bash
 cp .env.example .env
-# 编辑 .env 中 GDINO_CONFIG_PATH、GDINO_CHECKPOINT_PATH 等路径
+# 检测模型默认 yolo_world（实际加载 yoloe-11l-seg.pt）
+# 切换其他后端见下方“5. 切换检测模型”
 ```
 
 ### 3. 启动后端
@@ -175,16 +192,137 @@ npm run dev
 # 访问 http://localhost:5173
 ```
 
-### 5. 使用 Florence-2（可选，替代 Grounding DINO）
+### 5. 切换检测模型
 
-编辑 `.env`：
+后端默认使用 **YOLOE**（通过 Ultralytics 加载 `yoloe-11l-seg.pt`）。可在 `backend/.env` 中切换：
+
+#### YOLOE（默认，推荐）
+
+```env
+DETECTION_MODEL=yolo_world
+YOLO_WORLD_MODEL=/home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt
+# 也可填模型文件名让 ultralytics 自行下载，如 yoloe-11l-seg.pt
+```
+
+可选 SAHI 切片参数（大图小目标场景显著提升召回）：
+
+```env
+SAHI_SLICE_HEIGHT=640
+SAHI_SLICE_WIDTH=640
+SAHI_OVERLAP_HEIGHT_RATIO=0.2
+SAHI_OVERLAP_WIDTH_RATIO=0.2
+```
+
+#### YOLO-World（YOLOE 之外的另一个 Ultralytics 开放词汇模型）
+
+```env
+DETECTION_MODEL=yolo_world
+YOLO_WORLD_MODEL=yolo11l-world.pt   # 或 yolo11m-world.pt / yolo11s-world.pt
+```
+
+#### Grounding DINO
+
+```env
+DETECTION_MODEL=grounding_dino
+GDINO_CHECKPOINT_PATH=./models/groundingdino/weights/groundingdino_swint_ogc.pth
+```
+
+#### Florence-2
 
 ```env
 DETECTION_MODEL=florence2
 FLORENCE2_MODEL_ID=microsoft/Florence-2-large
 ```
 
-首次运行会从 HuggingFace 自动下载模型权重（约 1.5GB）。
+首次运行 Florence-2 会从 HuggingFace 自动下载模型权重（约 1.5GB）。
+
+---
+
+## 训练自定义 YOLOE 模型
+
+支持基于自有数据集对 YOLOE 进行微调或从头训练。完整流程见 [`backend/YOLOWorld/TRAINING.md`](backend/YOLOWorld/TRAINING.md)，本节列出最关键的几步：
+
+### 1. 准备数据集
+
+YOLO 标准目录布局：
+
+```
+/your/dataset/
+├── images/
+│   ├── train/      # 训练集图片
+│   ├── val/        # 验证集图片
+│   └── test/       # 测试集图片（可选）
+└── labels/
+    ├── train/      # 训练集标注 (.txt，与图片同名)
+    ├── val/        # 验证集标注
+    └── test/       # 测试集标注（可选）
+```
+
+每个 `.txt` 一行一个目标，格式：`class_id cx cy w h`（中心坐标 + 宽高，均归一化到 0–1）。
+
+### 2. 编写数据集 YAML
+
+复制模板后改路径与类别：
+
+```bash
+cp backend/YOLOWorld/dataset.yaml.example backend/YOLOWorld/dataset.yaml
+```
+
+```yaml
+path: /your/dataset          # 数据集根目录（绝对路径）
+train: images/train
+val: images/val
+test: images/test            # 可选
+names:
+  0: tower
+  1: insulator
+  2: vegetation
+```
+
+### 3. 启动训练
+
+```bash
+# 单卡基础训练
+python backend/YOLOWorld/train_yoloe.py \
+    --data backend/YOLOWorld/dataset.yaml \
+    --epochs 100 --imgsz 640 --batch 16 --device cuda:0
+
+# 多卡训练
+python backend/YOLOWorld/train_yoloe.py \
+    --data backend/YOLOWorld/dataset.yaml \
+    --device 0,1 --batch 32
+
+# 断点续训
+python backend/YOLOWorld/train_yoloe.py \
+    --data backend/YOLOWorld/dataset.yaml --resume
+
+# 冻结主干、轻量微调
+python backend/YOLOWorld/train_yoloe.py \
+    --data backend/YOLOWorld/dataset.yaml \
+    --epochs 30 --freeze 10 --lr0 0.001
+```
+
+CLI 完整参数：`python backend/YOLOWorld/train_yoloe.py --help`
+
+### 4. 训练产物 → 接回检测后端
+
+训练结束后权重位于：
+
+```
+backend/runs/train/yoloe_exp/weights/
+├── best.pt    # 验证集最优权重 ← 部署用这个
+└── last.pt    # 最后一轮（用于续训）
+```
+
+把 `best.pt` 绝对路径写回 `backend/.env`：
+
+```env
+YOLO_WORLD_MODEL=/home/hmxh/workspace/sodv3/SOD/backend/runs/train/yoloe_exp/weights/best.pt
+```
+
+重启后端即可使用新模型，业务代码无需改动。
+
+> 数据集结构细节、YOLO 标注格式、显存不足等常见问题，请参考 [`backend/YOLOWorld/TRAINING.md`](backend/YOLOWorld/TRAINING.md)。
 
 ---
 
@@ -492,15 +630,17 @@ while True:
 
 ## 依赖版本要求
 
-| 依赖 | 最低版本 |
-|------|---------|
-| Python | 3.10 |
-| PyTorch | 2.1.0 |
-| CUDA | 11.8 |
-| FastAPI | 0.111.0 |
-| transformers | 4.40.0 |
-| groundingdino-py | latest |
+| 依赖 | 最低版本 | 用途 |
+|------|---------|------|
+| Python | 3.10 | — |
+| PyTorch | 2.1.0 | 推理 / 训练 |
+| CUDA | 11.8 | GPU 加速 |
+| FastAPI | 0.111.0 | 后端框架 |
+| **ultralytics** | **8.3.0** | **YOLOE / YOLO-World 推理与训练** |
+| **sahi** | **0.11.18** | **小目标切片推理** |
+| transformers | 4.40.0 | Grounding DINO / Florence-2（可选） |
+| groundingdino-py | latest | Grounding DINO（可选） |
 
 ---
 
-*构建于开源模型之上，感谢 IDEA Research（Grounding DINO）、Microsoft（Florence-2）、ByteTrack 团队。*
+*构建于开源模型之上，感谢 Ultralytics（YOLOE / YOLO-World）、IDEA Research（Grounding DINO）、Microsoft（Florence-2）、ByteTrack 与 SAHI 团队。*
