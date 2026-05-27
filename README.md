@@ -11,6 +11,7 @@
 - [项目目录结构](#项目目录结构)
 - [各模块职责](#各模块职责)
 - [快速启动](#快速启动)
+- [大模型 (VLM) 配置](#大模型-vlm-配置)
 - [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)
 - [API 接口说明](#api-接口说明)
 - [示例请求与返回](#示例请求与返回)
@@ -29,12 +30,14 @@
 | 主检测模型 | **YOLOE**（Ultralytics） | 开放词汇 YOLO，速度快、显存低，**支持自定义训练**（见 [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)） |
 | 备选模型 | **YOLO-World** / **Grounding DINO** / **Florence-2** | 同样支持开放词汇检测，可按需切换 |
 | 小目标增强 | **SAHI** | 大图自动切片推理，显著提升小目标召回 |
+| **大模型 (VLM)** | **MiniCPM-V**（默认）/ 任意 OpenAI 兼容模型 | **Prompt 标准化 + 检测结果语义复核**，支持本地 vLLM 与远端 API（见 [大模型 (VLM) 配置](#大模型-vlm-配置)） |
 | 目标跟踪 | **ByteTrack** | 无需重检测的多目标跟踪，大幅降低 GPU 开销 |
 | 实时推送 | **Server-Sent Events (SSE)** | 逐帧推送，前端实时刷新 |
 | 前端 | **React 18 + Vite** | 快速构建、热更新；Tailwind CSS 样式 |
 | 部署环境 | Linux + NVIDIA GPU (CUDA) | 推荐 RTX 3090 / A100 或更高 |
 
 > 当前默认后端为 **YOLOE**（`yoloe-11l-seg.pt`），通过 Ultralytics 提供，可在 `backend/.env` 的 `DETECTION_MODEL` / `YOLO_WORLD_MODEL` 中切换。
+> 大模型默认指向本地 vLLM 服务（`http://localhost:8010/v1`，MiniCPM-V），改 `VLM_API_BASE` / `VLM_MODEL_NAME` 即可切换到远端 API（如 OpenAI、Qwen-VL、智谱、DeepSeek 等）。
 
 ### 检测 + 跟踪流程（速度优先）
 
@@ -44,6 +47,9 @@
     ├── 每隔 N 帧（默认 N=5）→ YOLOE 全量检测（GPU，可选 SAHI 切片）
     │                           ↓
     │                        ByteTrack.update(detections)  ← 分配持久 track_id
+    │                           ↓
+    │            （可选）VLM 语义复核：对低/中置信度 track 把裁剪图发给大模型
+    │                              判断是否真为目标，与检测得分融合
     │
     └── 其余帧 → ByteTrack.update(last_detections)  ← Kalman 预测（纯 CPU）
                     ↓
@@ -73,7 +79,12 @@ sod/
 │   │   │   ├── tracker.py         # ByteTrack 封装
 │   │   │   ├── visualizer.py      # 框 + 标签绘制、base64 编码
 │   │   │   ├── pipeline.py        # 主视频处理流水线
-│   │   │   └── task_manager.py    # 任务注册表 + 异步队列
+│   │   │   ├── task_manager.py    # 任务注册表 + 异步队列
+│   │   │   ├── vlm_service.py     # 大模型 (VLM) 客户端：OpenAI 兼容协议，检测结果语义复核
+│   │   │   ├── prompt_normalizer.py # 调用大模型把中文 prompt 转成英文检测短语 + 颜色/类别元数据
+│   │   │   ├── fusion_engine.py   # 检测器得分 × VLM 得分加权融合，决定 track 状态机
+│   │   │   ├── color_filter.py    # 按 HSV 颜色规则给检测框降权
+│   │   │   └── frame_quality.py   # 过滤过暗/过亮/全黑等低质量帧
 │   │   ├── utils/
 │   │   │   └── video_utils.py     # 视频元数据读取、时间戳格式化
 │   │   └── main.py                # FastAPI 入口 + 路由注册
@@ -119,11 +130,14 @@ sod/
 | `app/core/config.py` | 统一配置（通过 `.env` 注入，支持多环境） |
 | `app/api/upload.py` | 流式接收大视频文件，读取元数据，返回 `video_id` |
 | `app/api/detect.py` | 创建检测任务、SSE 流、ZIP 下载 |
-| `app/services/detector.py` | 封装 Grounding DINO / Florence-2，统一接口 |
+| `app/services/detector.py` | 封装 YOLOE / YOLO-World / Grounding DINO / Florence-2，统一接口 |
 | `app/services/tracker.py` | 封装 ByteTrack，提供持久 `track_id` |
 | `app/services/visualizer.py` | 绘制高对比度检测框、标签、时间戳 |
 | `app/services/pipeline.py` | 主流水线：读帧→检测→跟踪→画框→推送→ZIP |
 | `app/services/task_manager.py` | 任务注册表，SSE 异步队列，GPU 并发控制 |
+| `app/services/vlm_service.py` | 大模型（VLM）客户端：把检测裁剪图 + 目标描述发给本地/远端 OpenAI 兼容 API，返回是否为目标的 JSON 判定 |
+| `app/services/prompt_normalizer.py` | 调用大模型把中文自然语言转成英文检测短语，并抽取目标类型、颜色过滤等元信息 |
+| `app/services/fusion_engine.py` | 把检测器分数与 VLM 分数加权融合（默认 0.4/0.6），驱动 track 的 tentative→confirmed→rejected 状态机 |
 | `app/utils/video_utils.py` | `cv2` 读取视频信息、格式化时间戳 |
 | `frontend/hooks/useDetectionTask.js` | 封装完整前端状态机（上传→任务→SSE→结果） |
 | `frontend/components/ResultViewer.jsx` | 实时帧大图 + 历史缩略图网格，点击可查看任意帧 |
@@ -235,6 +249,129 @@ FLORENCE2_MODEL_ID=microsoft/Florence-2-large
 ```
 
 首次运行 Florence-2 会从 HuggingFace 自动下载模型权重（约 1.5GB）。
+
+---
+
+## 大模型 (VLM) 配置
+
+本项目集成了一个 **视觉-语言大模型（VLM）** 服务于两个用途：
+
+1. **Prompt 标准化** — `app/services/prompt_normalizer.py`
+   把用户的中文自然语言（如 `"菜地、水塘"`）转换成检测器友好的英文短语（如 `"vegetable field. water pond."`），并自动抽取目标类型（common/small/rare）、颜色过滤规则、视觉特征等元信息，用于后续的阈值调整与降权。
+
+2. **检测结果语义复核** — `app/services/vlm_service.py` + `app/services/fusion_engine.py`
+   对低/中置信度的 track，把检测裁剪图发送给 VLM，让大模型判断"图中目标是否就是用户想要的东西"，返回的得分会与检测器得分按 `VLM_WEIGHT` / `DINO_WEIGHT` 加权融合，驱动 track 的 `tentative → confirmed / rejected` 状态机。这一步显著降低小目标和罕见类的误检。
+
+### 调用协议
+
+两个模块统一使用 **OpenAI 兼容的 Chat Completions 协议**（`POST {VLM_API_BASE}/chat/completions`），因此**同一份代码既能调本地大模型，也能调远端云端 API**——只需要改 `.env` 中两个字段。
+
+### 选项 A：本地大模型（默认，推荐）
+
+默认指向本机 vLLM 启动的 **MiniCPM-V** 服务：
+
+```env
+# backend/.env
+VLM_ENABLED=true
+VLM_API_BASE=http://localhost:8010/v1
+VLM_MODEL_NAME=MiniCPM-V-4_5
+```
+
+启动本地 vLLM 服务（示例，需提前下载好模型权重）：
+
+```bash
+# 安装 vLLM
+pip install vllm
+
+# 启动 OpenAI 兼容 server
+python -m vllm.entrypoints.openai.api_server \
+    --model openbmb/MiniCPM-V-2_6 \
+    --served-model-name MiniCPM-V-4_5 \
+    --port 8010 \
+    --trust-remote-code \
+    --dtype auto
+```
+
+也可用其它能提供 OpenAI 兼容接口的本地推理框架（Ollama、LM Studio、Xinference、SGLang 等），只要 `base_url` 和 `model name` 对得上即可。
+
+### 选项 B：远端大模型 API
+
+把 `VLM_API_BASE` 改成任意 OpenAI 兼容服务的根地址，把 `VLM_MODEL_NAME` 改成对应的模型名。常见示例（请用真实的 API key）：
+
+| 提供商 | `VLM_API_BASE` | `VLM_MODEL_NAME` 示例 |
+|---|---|---|
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o` / `gpt-4o-mini` |
+| 阿里云通义 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-vl-max` / `qwen-vl-plus` |
+| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4v` |
+| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat`（仅纯文本 prompt 标准化场景） |
+| 自建网关 | 你的网关地址 | 网关下注册的模型名 |
+
+> 当前 `httpx.Client` 调用没有显式注入 `Authorization` header；如要走需要鉴权的远端 API，请在 `app/services/vlm_service.py` / `prompt_normalizer.py` 的 `httpx.Client(...)` 里加 `headers={"Authorization": f"Bearer {settings.VLM_API_KEY}"}`，并在 `app/core/config.py` 增加 `VLM_API_KEY` 字段。
+
+### 关键配置项（`backend/.env` / `app/core/config.py`）
+
+| 字段 | 默认值 | 说明 |
+|---|---|---|
+| `VLM_ENABLED` | `true` | 总开关。`false` 后流水线只跑检测器，不调用 VLM |
+| `VLM_API_BASE` | `http://localhost:8010/v1` | OpenAI 兼容 endpoint 根地址 |
+| `VLM_MODEL_NAME` | `MiniCPM-V-4_5` | `model` 字段填的模型名 |
+| `VLM_MAX_CONCURRENT` | `1` | 同时向 VLM 发起的最大并发请求数 |
+| `VLM_INTERVAL_TENTATIVE` | `3.0` | tentative track 的 VLM 复核最短间隔（秒） |
+| `VLM_INTERVAL_CONFIRMED` | `8.0` | 已 confirmed track 的复核最短间隔（秒） |
+| `VLM_SCORE_THRESHOLD` | `0.45` | VLM 输出 confidence 低于此值视为无效 |
+| `VLM_WEIGHT` | `0.6` | 融合公式中 VLM 分数权重 |
+| `DINO_WEIGHT` | `0.4` | 融合公式中检测器分数权重 |
+| `VLM_CONFIRM_THRESHOLD` | `0.65` | VLM 高置信确认阈值 |
+| `CONFIRM_THRESHOLD` | `0.65` | 融合得分 ≥ 此值则 track 转为 confirmed |
+| `REJECT_THRESHOLD` | `0.35` | 融合得分 ≤ 此值则 track 转为 rejected |
+| `CROP_PADDING_NORMAL` | `0.15` | 普通目标裁剪扩边比例 |
+| `CROP_PADDING_SMALL` | `0.30` | 小目标裁剪扩边比例（面积占比 < `SMALL_OBJECT_AREA_RATIO`） |
+| `SMALL_OBJECT_AREA_RATIO` | `0.01` | 小目标判定阈值（占画面比例） |
+
+### 关闭 VLM（纯检测模式）
+
+如果只想跑检测器、不调用大模型，把开关关掉即可：
+
+```env
+VLM_ENABLED=false
+```
+
+或在 API 请求层面单次关闭：
+
+```json
+POST /api/detect
+{
+  "video_id": "...",
+  "prompt": "person . car",
+  "enable_vlm": false
+}
+```
+
+`POST /api/detect` 的 `enable_vlm` 字段会覆盖 `.env` 里的全局设置。
+
+### 工作时序（简化）
+
+```
+检测器输出 box（low/mid confidence）
+        │
+        ▼
+fusion_engine 判断该 track 是否需要复核
+        │ 满足间隔条件
+        ▼
+vlm_service.crop_detection(frame, box)  ← 自适应扩边
+        │
+        ▼
+POST {VLM_API_BASE}/chat/completions     ← 本地 or 远端
+   payload: { image_b64, target_text }
+        │
+        ▼
+解析返回 JSON: { is_target, matched_label, confidence, reason }
+        │
+        ▼
+fusion_engine.apply_vlm_result(...)
+   final_score = 0.4 * dino_score + 0.6 * vlm_score
+   → confirmed / rejected / tentative
+```
 
 ---
 
@@ -638,9 +775,10 @@ while True:
 | FastAPI | 0.111.0 | 后端框架 |
 | **ultralytics** | **8.3.0** | **YOLOE / YOLO-World 推理与训练** |
 | **sahi** | **0.11.18** | **小目标切片推理** |
+| **httpx** | **0.27.0** | **调用 VLM（本地或远端 OpenAI 兼容 API）** |
 | transformers | 4.40.0 | Grounding DINO / Florence-2（可选） |
 | groundingdino-py | latest | Grounding DINO（可选） |
 
 ---
 
-*构建于开源模型之上，感谢 Ultralytics（YOLOE / YOLO-World）、IDEA Research（Grounding DINO）、Microsoft（Florence-2）、ByteTrack 与 SAHI 团队。*
+*构建于开源模型之上，感谢 Ultralytics（YOLOE / YOLO-World）、IDEA Research（Grounding DINO）、Microsoft（Florence-2）、OpenBMB（MiniCPM-V）、ByteTrack 与 SAHI 团队。*
