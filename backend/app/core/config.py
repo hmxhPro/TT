@@ -150,10 +150,55 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/sod"
     DATABASE_ECHO: bool = False  # set True to log every SQL statement
 
+    # ── YOLOE custom training + image detection ─────────────────────────────
+    # Separate storage for the annotation→train→model-list workflow (REQ2/REQ3).
+    # Raw per-category uploads, the frozen annotated YOLO dataset, mutable
+    # working labels, and Ultralytics training runs each live in their own root.
+    DATASETS_DIR: Path = Path("./datasets")        # datasets/<cat_id>/{raw,yolo/<job_id>}
+    ANNOTATIONS_DIR: Path = Path("./annotations")  # annotations/<cat_id>/<image_id>.txt (working labels)
+    TRAIN_RUNS_DIR: Path = Path("./runs/train")    # Ultralytics project dir; best.pt under <name>/weights
+    # Subdir under RESULTS_DIR for image-detection annotated outputs.
+    IMGDET_SUBDIR: str = "imgdet"
+
+    # Base YOLOE weights for zero-shot image detection AND as the training
+    # starting checkpoint. Absolute path recommended. Falls back to
+    # YOLO_WORLD_MODEL when left empty.
+    YOLOE_BASE_MODEL: str = ""
+
+    # In-memory cache of loaded image-detection models (LRU). Each loaded
+    # YOLOE model shares cuda:0 with the warm video detector — keep this small.
+    IMAGE_MODEL_CACHE_SIZE: int = Field(default=2, ge=1)
+    IMAGE_DETECT_CONF: float = Field(default=0.25, ge=0.0, le=1.0)
+
+    # Training defaults (overridable per request). Train/val split is applied
+    # at dataset finalize; if fewer than MIN_VAL_IMAGES are annotated the val
+    # set mirrors train (Ultralytics needs a non-empty val set to compute mAP).
+    TRAIN_VAL_SPLIT: float = Field(default=0.8, ge=0.1, le=0.95)
+    MIN_VAL_IMAGES: int = Field(default=5, ge=1)
+    TRAIN_DEFAULT_EPOCHS: int = Field(default=100, ge=1)
+    TRAIN_DEFAULT_IMGSZ: int = Field(default=640, ge=64)
+    TRAIN_DEFAULT_BATCH: int = Field(default=16)
+    # DataLoader worker processes. Kept low (Ultralytics default is 8) because
+    # this box is a 15 GB-RAM WSL2 VM: train + val + final-validation loaders
+    # each fork `workers` children, and near the last epoch all three sets are
+    # alive at once. 8×3 large-seg workers exhausted RAM and deadlocked the
+    # worker↔main IPC sockets (training hung forever on the final epoch). 0 =
+    # load batches in the main process (slowest but immune to that deadlock).
+    TRAIN_DEFAULT_WORKERS: int = Field(default=2, ge=0)
+
+    @property
+    def yoloe_base_model(self) -> str:
+        """Resolved base weights for zero-shot/training (falls back to the
+        video detector's weights when YOLOE_BASE_MODEL is unset)."""
+        return self.YOLOE_BASE_MODEL or self.YOLO_WORLD_MODEL
+
     def ensure_dirs(self) -> None:
         """Create storage directories if they don't exist."""
         self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         self.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        self.DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+        self.ANNOTATIONS_DIR.mkdir(parents=True, exist_ok=True)
+        self.TRAIN_RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # Singleton instance

@@ -35,7 +35,7 @@ import numpy as np
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import BoundingBox, Detection, FrameResult
-from app.services.detector import RawDetection, get_detector
+from app.services.detector import RawDetection, get_detector, get_trained_detector
 from app.services.frame_analyzer import create_frame_analyzer
 from app.services.frame_quality import create_quality_checker
 from app.services.fusion_engine import FusionEngine
@@ -64,6 +64,7 @@ async def run_detection_pipeline(
     original_prompt: str = "",
     label_mapping: Optional[dict] = None,
     color_filters: Optional[List[dict]] = None,
+    weights_path: Optional[str] = None,
 ) -> None:
     """
     Async coroutine that processes a video file and streams results.
@@ -78,6 +79,8 @@ async def run_detection_pipeline(
         original_prompt: Original user input (Chinese)
         label_mapping: Dict mapping English labels to Chinese labels
         color_filters: List of color filter rules for post-processing
+        weights_path: When set, detect with this trained model (best.pt) using
+            its baked-in classes instead of the open-vocabulary singleton.
     """
     # ── Config ────────────────────────────────────────────────────────────
     det_interval = detection_interval or settings.DETECTION_INTERVAL
@@ -125,6 +128,7 @@ async def run_detection_pipeline(
                 original_prompt=original_prompt,
                 label_mapping=label_mapping,
                 color_filters=color_filters,
+                weights_path=weights_path,
             )
         except Exception as exc:
             logger.exception(f"[{task_id}] Pipeline error: {exc}")
@@ -207,8 +211,9 @@ def _sync_pipeline(
     original_prompt: str = "",
     label_mapping: Optional[dict] = None,
     color_filters: Optional[List[dict]] = None,
+    weights_path: Optional[str] = None,
 ) -> None:
-    detector = get_detector()
+    detector = get_trained_detector(weights_path) if weights_path else get_detector()
     tracker = create_tracker(fps=fps)
     fusion = FusionEngine()
     vlm = get_vlm_service() if enable_vlm else None

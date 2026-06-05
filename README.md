@@ -11,6 +11,7 @@
 - [项目目录结构](#项目目录结构)
 - [各模块职责](#各模块职责)
 - [快速启动](#快速启动)
+- [迁移到新设备](#迁移到新设备)
 - [大模型 (VLM) 配置](#大模型-vlm-配置)
 - [任务历史持久化 (PostgreSQL)](#任务历史持久化-postgresql)
 - [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型)
@@ -173,7 +174,7 @@ pip install -r requirements.txt
 ```
 
 `requirements.txt` 已包含 **YOLOE 默认后端** 所需的 `ultralytics>=8.3.0` 与 `sahi>=0.11.18`。  
-YOLOE 模型权重首次使用时会自动下载到 `~/.cache/ultralytics/`，离线环境请提前手动下载 `yoloe-11l-seg.pt` 并把绝对路径写入 `backend/.env` 的 `YOLO_WORLD_MODEL`。
+YOLOE 权重 `yoloe-11l-seg.pt` 与文本编码器 `mobileclip_blt.ts` **不随仓库分发（已被 `.gitignore` 忽略），且本项目强制离线、运行时不会自动联网下载**——需要手动下载并放到约定位置。完整步骤（含下载直链、放置路径、`.env` 改写）见 [迁移到新设备](#迁移到新设备) 一节。
 
 如需 **Grounding DINO 或 Florence-2** 后端，再额外安装：
 
@@ -260,6 +261,233 @@ FLORENCE2_MODEL_ID=microsoft/Florence-2-large
 ```
 
 首次运行 Florence-2 会从 HuggingFace 自动下载模型权重（约 1.5GB）。
+
+---
+
+## 迁移到新设备
+
+> 这一节专门解决三件事：**(A) YOLOE 模型与额外文件从哪下载、放到哪里**；**(B) 数据集怎么配置、怎么搬**；**(C) PostgreSQL 怎么建库建表**。
+
+**先理解一个前提**：本仓库 `.gitignore` 忽略了 `*.pt / *.pth / *.ts / weights/`，而 `datasets/ annotations/ runs/` 也没纳入版本库。换句话说，**`git clone` 只会带来代码，不会带来任何模型权重、数据集和训练产物**——这些都必须手动下载或拷贝。
+
+### 0. clone 之后还缺什么（总览）
+
+| 类别 | 随 `git clone` 过来? | 迁移动作 |
+|---|---|---|
+| 源码 / `requirements.txt` / `start*.sh` | ✅ 是 | 无 |
+| `backend/.env` | ⚠️ 在版本库里，但含**旧机器的绝对路径 + 旧 DB 密码** | 按本节改写（A/C） |
+| YOLOE 权重 `yoloe-11l-seg.pt` | ❌ 否 | 下载 / 拷贝（A） |
+| 文本编码器 `mobileclip_blt.ts` | ❌ 否 | 下载 / 拷贝（A）——**缺它则文本提示检测直接报错** |
+| Grounding DINO 权重（可选） | ❌ 否 | 仅 `DETECTION_MODEL=grounding_dino` 时需要（A） |
+| 训练数据 `backend/datasets/`、`backend/annotations/` | ❌ 否 | 想保留历史标注就整目录拷贝（B） |
+| 训练产物 `backend/runs/train/.../best.pt` | ❌ 否 | 想保留已训练模型就整目录拷贝（B） |
+| PostgreSQL 数据 | ❌ 否（在数据库里，不在仓库） | 新机重新建库建表（C），或 `pg_dump` / `pg_restore` 连数据搬 |
+
+### A. YOLOE 模型与额外文件：下载 + 放到哪里
+
+本项目**强制离线模式**（`yolo_world_detector.py` / `image_detector.py` / `train_yoloe.py` 都设置了 `YOLO_OFFLINE=1`、`ULTRALYTICS_OFFLINE=1`），所以**运行时不会自动联网下载**，必须先把文件放到位。
+
+| 文件 | 大小 | 目标路径（相对 `SOD/` 根） | 必需性 / 作用 |
+|---|---|---|---|
+| `yoloe-11l-seg.pt` | ~68 MB | `backend/models/yolo/yoloe-11l-seg.pt` | **必需**。视频 / 图片检测器与训练共用的基座权重 |
+| `mobileclip_blt.ts` | ~572 MB | `backend/mobileclip_blt.ts` | **文本提示必需**。YOLOE 开放词表（`set_classes`）用它把类别文字编码成向量；缺失会抛 “需要 … mobileclip_blt.ts 文本编码器” |
+| `groundingdino_swint_ogc.pth` | ~662 MB | `backend/models/groundingdino/weights/groundingdino_swint_ogc.pth` | 可选。只有切到 Grounding DINO 后端才需要 |
+| `yolo26n.pt` | ~5 MB | （无） | **不需要**。历史遗留的自动下载文件，可忽略或删除 |
+
+#### 下载方式一（推荐：在有网的机器上让 Ultralytics 自己拉）
+
+```bash
+cd backend
+# 临时关掉离线开关，让 ultralytics 联网下载
+YOLO_OFFLINE=0 ULTRALYTICS_OFFLINE=0 python - <<'PY'
+from ultralytics import YOLOE
+m = YOLOE("yoloe-11l-seg.pt")               # ← 下载 yoloe-11l-seg.pt 到当前目录
+names = ["person", "car"]
+m.set_classes(names, m.get_text_pe(names))  # ← 触发下载 mobileclip_blt.ts 到当前目录
+print("downloaded ok")
+PY
+
+# 把基座权重归位；mobileclip_blt.ts 留在 backend/ 当前目录即可（见下方“放哪”说明）
+mkdir -p models/yolo
+mv -f yoloe-11l-seg.pt models/yolo/yoloe-11l-seg.pt
+```
+
+#### 下载方式二（手动直链：适合内网 / 离线分发）
+
+```bash
+cd backend
+mkdir -p models/yolo
+wget -O models/yolo/yoloe-11l-seg.pt \
+  https://github.com/ultralytics/assets/releases/download/v8.3.0/yoloe-11l-seg.pt
+wget -O mobileclip_blt.ts \
+  https://github.com/ultralytics/assets/releases/download/v8.3.0/mobileclip_blt.ts
+
+# 可选：Grounding DINO 权重
+mkdir -p models/groundingdino/weights
+wget -O models/groundingdino/weights/groundingdino_swint_ogc.pth \
+  https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+```
+
+> 换其它规格只需替换文件名：`yoloe-11s-seg.pt`（最小最快）/ `yoloe-11m-seg.pt`（均衡）/ `yoloe-11l-seg.pt`（当前用，精度最好）。
+
+#### `mobileclip_blt.ts` 到底放哪（最容易踩的坑）
+
+Ultralytics 按 `attempt_download_asset("mobileclip_blt.ts")` 加载文本编码器，路径是**相对“进程当前工作目录(CWD)”**解析的；而 `backend/start.sh` 会先 `cd backend` 再起 uvicorn，**CWD 就是 `backend/`**——所以把文件放在 **`backend/mobileclip_blt.ts`** 最稳妥。
+
+⚠️ 仓库里 `backend/weights/mobileclip_blt.ts` 是一个指向 `/home/user/.config/Ultralytics/...`（旧机器用户名）的**软链接**，到新机器是**断链**。迁移后删掉或重建它，别让它挡住真实文件：
+
+```bash
+cd backend
+rm -f weights/mobileclip_blt.ts                          # 删掉断掉的软链
+# 如需在 weights/ 也保留一份，软链到真实文件即可：
+# ln -sf "$(pwd)/mobileclip_blt.ts" weights/mobileclip_blt.ts
+```
+
+#### 改 `.env` 里的绝对路径
+
+旧机器的绝对路径是 `/home/hmxh/workspace/sodv3/SOD/...`，新机器多半不同，必须改：
+
+```env
+# backend/.env —— 改成新机器上的真实绝对路径
+DETECTION_MODEL=yolo_world      # 走 YOLOE 分支（项目里 yolo_world 后端实际加载的就是 YOLOE 权重）
+DEVICE=cuda:0                   # 无 GPU 改 cpu
+YOLO_WORLD_MODEL=/abs/path/to/SOD/backend/models/yolo/yoloe-11l-seg.pt
+YOLOE_BASE_MODEL=/abs/path/to/SOD/backend/models/yolo/yoloe-11l-seg.pt
+```
+
+#### 放置自检
+
+```bash
+cd backend
+python -c "from ultralytics import YOLOE; print('YOLOE import OK')"
+ls -lh models/yolo/yoloe-11l-seg.pt mobileclip_blt.ts
+```
+
+### B. 数据集怎么配置
+
+项目里有**两套**数据集体系，别混用：
+
+#### B-1. 网页/接口的「类别 → 上传 → 标注 → 训练」工作流（应用自管，UUID 命名）
+
+由后端自动维护，目录与 `.env` 一一对应：
+
+```
+backend/datasets/<category_id>/raw/<image_id>.jpg      # 上传的原图
+backend/annotations/<category_id>/<image_id>.txt        # 可编辑的“工作标签”（YOLO 文本）
+backend/datasets/<category_id>/yolo/<job_id>/           # 开始训练时自动“冻结”出的数据集
+    images/{train,val}/...
+    labels/{train,val}/...
+    dataset.yaml                                         # 自动生成，names: {0: <类别名>}
+```
+
+```env
+# backend/.env —— 一般保持相对路径即可（相对 backend/ 启动目录）
+DATASETS_DIR=./datasets
+ANNOTATIONS_DIR=./annotations
+TRAIN_RUNS_DIR=./runs/train
+```
+
+- 这套是**单类别**：所有框统一写成 class `0`，`dataset.yaml` 的 `names` 用类别名；训练时还会自动把框转成分割多边形（因为基座是 `*-seg` 分割模型）。
+- `train/val` 划分在“开始训练”时自动完成（`TRAIN_VAL_SPLIT` 默认 0.8）；当已标注图少于 `MIN_VAL_IMAGES`（默认 5）时，val 直接镜像 train，好让 Ultralytics 仍能算出 mAP。
+- **迁移**：想保留已上传图片与标注，就把 `backend/datasets/`、`backend/annotations/` 整目录拷到新机器同样位置（它们**不在 git 里**）。
+
+#### B-2. 命令行手工训练的数据集（标准 YOLO 布局，自己写 yaml）
+
+完整说明见 [训练自定义 YOLOE 模型](#训练自定义-yoloe-模型) 与 `backend/YOLOWorld/TRAINING.md`，要点：
+
+```
+/your/dataset/
+├── images/{train,val,test}/...   # 图片
+└── labels/{train,val,test}/...   # 同名 .txt，每行: <class_id> <cx> <cy> <w> <h>（归一化 0–1）
+```
+
+```bash
+cp backend/YOLOWorld/dataset.yaml.example backend/YOLOWorld/dataset.yaml
+# 编辑 path(绝对路径) / train / val / names 后：
+python backend/YOLOWorld/train_yoloe.py --data backend/YOLOWorld/dataset.yaml --epochs 100
+```
+
+#### 训练产物的迁移
+
+已训练好的模型在 `backend/runs/train/<名字>/weights/best.pt`，**同样不在 git 里**。要在新机器继续用，二选一：整目录拷 `runs/` 过去，或只拷 `best.pt` 后在 `.env` 把 `YOLO_WORLD_MODEL` 指过去。
+
+> ⚠️ **绝对路径警告**：数据库里 `yoloe_dataset_images.stored_path`、`yoloe_training_jobs.dataset_yaml`、`yoloe_trained_models.weights_path` 等列存的都是**绝对路径**。如果新机器的项目根路径与旧机器不同，这些历史记录会指向错误位置。最省事的做法是**把项目放到与旧机器相同的绝对路径**（即 `/home/<user>/workspace/sodv3/SOD`）；否则迁移后需用 SQL 批量改写这些列。
+
+### C. PostgreSQL 怎么建库 / 建表
+
+表结构由 SQLAlchemy 在后端启动时**自动创建**（`app/db/session.py` 的 `init_db()` → `Base.metadata.create_all`），**你不用手写任何建表 DDL**——但需要先把**数据库和角色**准备好。
+
+**第 1 步：装好 PostgreSQL（≥13）并确认在运行**
+
+```bash
+sudo apt-get install -y postgresql       # Debian/Ubuntu 示例
+pg_isready                               # 应输出 “... accepting connections”
+```
+
+**第 2 步：建角色 + 建库（推荐用一键脚本）**
+
+```bash
+bash backend/scripts/init_postgres.sh    # 需要 sudo（用 postgres 系统用户执行 DDL）
+```
+
+脚本做的事：建角色 `sod_app`（随机 24 位密码，或复用 `.env` 里已有的密码）→ 建库 `sod`（owner=sod_app）→ 授权 `public` schema → 用 TCP 密码登录验证一次 → 把 `DATABASE_URL` 写回 `backend/.env` 并 `chmod 600`。可用环境变量改名：
+
+```bash
+SOD_DB_NAME=mydb SOD_DB_USER=myrole bash backend/scripts/init_postgres.sh
+```
+
+> 不想用脚本时的手动等价做法：
+> ```bash
+> sudo -u postgres psql -c "CREATE ROLE sod_app LOGIN PASSWORD '改成你的密码';"
+> sudo -u postgres psql -c "CREATE DATABASE sod OWNER sod_app;"
+> sudo -u postgres psql -d sod -c "GRANT ALL ON SCHEMA public TO sod_app;"
+> ```
+> 再在 `backend/.env` 写（驱动后缀**必须**是 `+asyncpg`）：
+> ```env
+> DATABASE_URL=postgresql+asyncpg://sod_app:改成你的密码@localhost:5432/sod
+> ```
+
+**第 3 步：建表（启动后端即自动完成）**
+
+```bash
+cd backend && bash start.sh    # 或 uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 日志出现 “DB schema ensured” 即建表成功
+```
+
+启动时自动创建的 5 张表：
+
+| 表名 | 用途 |
+|---|---|
+| `detection_tasks` | 视频检测任务历史（状态 / 进度 / 时间戳） |
+| `yoloe_categories` | 训练类别（draft → annotating → ready → trained） |
+| `yoloe_dataset_images` | 每个类别下上传的图片 + 标注状态 |
+| `yoloe_training_jobs` | 每次训练任务（进度 / 指标 / best.pt 路径 / PID） |
+| `yoloe_trained_models` | 已训练模型注册表（供前端模型列表选择） |
+
+> ⚠️ `create_all` **只创建缺失的表，不会修改已存在的表**。新机器是空库 → 5 张表全建；若是迁移旧库且改过列定义，需用 Alembic 迁移（见 [表结构升级](#表结构升级)）。  
+> 验证已建表：`sudo -u postgres psql -d sod -c '\dt'`。
+
+**（可选）连数据一起迁**：想把旧机器的历史任务 / 训练记录也带过去：
+
+```bash
+# 旧机器导出
+pg_dump -U sod_app -h localhost sod > sod_backup.sql
+# 新机器（先用第 2 步建好空库 sod，再导入）
+psql -U sod_app -h localhost -d sod < sod_backup.sql
+```
+
+（同样注意上面 B 节的“绝对路径警告”。）
+
+### 迁移完成检查清单
+
+- [ ] `git clone` 代码，`pip install -r backend/requirements.txt`（torch/torchvision 用 GPU 容器自带，不经 pip 装）
+- [ ] `yoloe-11l-seg.pt` → `backend/models/yolo/`；`mobileclip_blt.ts` → `backend/`
+- [ ] 删除 / 重建 `backend/weights/mobileclip_blt.ts` 断链
+- [ ] 改 `backend/.env`：`YOLO_WORLD_MODEL` / `YOLOE_BASE_MODEL` 绝对路径、`DEVICE`、`DETECTION_MODEL=yolo_world`
+- [ ] `bash backend/scripts/init_postgres.sh` 建库建角色（写好 `DATABASE_URL`）
+- [ ] （可选）拷 `backend/datasets/ annotations/ runs/`，或 `pg_dump` 旧库连数据迁
+- [ ] `bash backend/start.sh` → 看到 “DB schema ensured”，且检测能跑通
+- [ ] 前端 `cd frontend && npm install && npm run dev`（默认 Vite 代理到 `localhost:8000`，本地开发无需额外配置）
 
 ---
 

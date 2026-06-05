@@ -112,7 +112,7 @@ python backend/YOLOWorld/train_yoloe.py \
 ```bash
 python backend/YOLOWorld/train_yoloe.py \
     --data backend/YOLOWorld/dataset.yaml \
-    --model /home/user/.cache/ultralytics/hub/models/yoloe-11l-seg.pt \
+    --model /home/hmxh/workspace/sodv3/SOD/backend/models/yolo/yoloe-11l-seg.pt \
     --epochs 100
 ```
 

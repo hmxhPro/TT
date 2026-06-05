@@ -359,7 +359,7 @@ export function useDetectionTasks() {
   }, [handleStreamEvent, reconcileWithServer, patchTask])
 
   // ── Run a single task through the full workflow ────────────────────────
-  const runTask = useCallback(async (id, prompt, detectionInterval, enableVlm) => {
+  const runTask = useCallback(async (id, prompt, detectionInterval, enableVlm, modelId) => {
     const current = tasksRef.current.find((t) => t.id === id)
     if (!current || !current.file) return
 
@@ -372,12 +372,15 @@ export function useDetectionTasks() {
       })
       patchTask(id, { videoInfo, videoId: videoInfo.video_id, uploadProgress: 100 })
 
-      // 2. Start detection
+      // 2. Start detection. With a trained model selected, classes are baked
+      // into the weights so we send model_id and an empty prompt (the backend
+      // requires exactly one of prompt / model_id).
       patchTask(id, { taskStatus: 'pending' })
       const task = await startDetection({
         video_id: videoInfo.video_id,
         video_filename: videoInfo.filename,
-        prompt,
+        prompt: modelId ? '' : prompt,
+        model_id: modelId || undefined,
         detection_interval: detectionInterval || undefined,
         enable_vlm: enableVlm,
       })
@@ -391,7 +394,7 @@ export function useDetectionTasks() {
   }, [patchTask, openStream])
 
   // ── Public: start every queued task in parallel ────────────────────────
-  const startAll = useCallback(async (prompt, detectionInterval, enableVlm) => {
+  const startAll = useCallback(async (prompt, detectionInterval, enableVlm, modelId) => {
     const toStart = tasksRef.current.filter((t) =>
       ['queued', 'failed', 'cancelled'].includes(t.taskStatus)
     )
@@ -415,13 +418,13 @@ export function useDetectionTasks() {
     await Promise.all(
       ids.map((id) => {
         const exists = tasksRef.current.find((t) => t.id === id)
-        return exists ? runTask(id, prompt, detectionInterval, enableVlm) : Promise.resolve()
+        return exists ? runTask(id, prompt, detectionInterval, enableVlm, modelId) : Promise.resolve()
       })
     )
   }, [runTask, closeStream])
 
-  const startOne = useCallback((id, prompt, detectionInterval, enableVlm) => {
-    return runTask(id, prompt, detectionInterval, enableVlm)
+  const startOne = useCallback((id, prompt, detectionInterval, enableVlm, modelId) => {
+    return runTask(id, prompt, detectionInterval, enableVlm, modelId)
   }, [runTask])
 
   // ── Rehydrate persisted tasks on mount ─────────────────────────────────

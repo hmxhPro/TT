@@ -1,3 +1,4 @@
+# ===== Models / weights (torchscript .ts included) =====
 *.pth
 *.pt
 *.ckpt
@@ -5,5 +6,29 @@
 *.ts
 weights/
 
-./backend/models/groundingdino/weights/groundingdino_swint_ogc.pth
-./mobileclip_blt.ts
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== Node / frontend deps =====
+node_modules/
+
+# ===== Logs =====
+*.log
+*.log.zip
+logs/
+
+# ===== Local runtime data (regenerable, not for git) =====
+backend/uploads/
+backend/datasets/
+backend/runs/
+backend/annotations/
+backend/results/
+
+# ===== Large media =====
+*.mp4
+*.avi
+*.mov
+*.mkv

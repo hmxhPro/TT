@@ -17,6 +17,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from app.core.config import settings
 from app.core.logging import logger
+from app.db.models import TrainedModelRecord
+from app.db.session import AsyncSessionLocal
 from app.models.schemas import (
     DetectRequest,
     DetectResponse,
@@ -64,47 +66,91 @@ async def start_detection(body: DetectRequest) -> DetectResponse:
         )
     video_path = video_files[0]
 
-    # ── Validate prompt ────────────────────────────────────────────────────
-    prompt = body.prompt.strip()
-    if not prompt:
+    # ── Resolve detection mode: trained model XOR natural-language prompt ──
+    prompt = (body.prompt or "").strip()
+    model_id = (body.model_id or "").strip() or None
+    if bool(model_id) == bool(prompt):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Prompt must not be empty.",
+            detail="请二选一：提供 prompt（自然语言检测）或 model_id（使用已训练模型）。",
         )
 
-    # ── Normalize prompt for Grounding DINO ───────────────────────────────
-    normalized = normalize_prompt(prompt)
-    dino_prompt = normalized.dino_prompt
-    vlm_query = normalized.vlm_query
+    weights_path = None
 
-    # Build label mapping: English -> Chinese
-    label_mapping = {}
-    if normalized.targets:
-        for target in normalized.targets:
-            zh_label = target.get("zh", "")
-            en_phrases = target.get("en", [])
-            if zh_label and en_phrases:
-                for en in en_phrases:
-                    # Remove trailing period and convert to lowercase
-                    en_clean = en.strip().rstrip('.').lower()
-                    label_mapping[en_clean] = zh_label
+    if model_id:
+        # ── Trained-model mode: classes are baked into the weights ─────────
+        try:
+            async with AsyncSessionLocal() as session:
+                rec = await session.get(TrainedModelRecord, model_id)
+        except Exception as exc:
+            logger.warning(f"detect model lookup failed: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="数据库不可用。",
+            ) from exc
+        if rec is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "所选模型不存在。")
+        # Fail fast (before queuing) if the weights file is missing — otherwise
+        # the task would only fail on its first detection frame.
+        if not rec.weights_path or not Path(rec.weights_path).exists():
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "模型权重文件不存在，无法用于检测。",
+            )
 
-    # Get color filters from LLM or use presets
-    color_filters = normalized.color_filters
-    if not color_filters and normalized.targets:
-        # Try to get preset color filters for known targets
-        for target in normalized.targets:
-            zh_label = target.get("zh", "")
-            preset = get_preset_color_filter(zh_label)
-            if preset:
-                color_filters.extend(preset)
-                logger.info(f"Using preset color filter for '{zh_label}'")
+        weights_path = rec.weights_path
+        class_names = list(rec.class_names.values()) if isinstance(rec.class_names, dict) else []
+        # No prompt → no normalization. The model's native model.names provide
+        # the labels; keep dino_prompt / original_prompt / label_mapping EMPTY so
+        # the pipeline's relabel step does NOT overwrite them.
+        dino_prompt = ""
+        original_prompt = ""
+        label_mapping = {}
+        color_filters = []
+        vlm_query = "、".join(str(c) for c in class_names if c)
+        display_prompt = f"模型：{rec.name}"
+        # create_task persists body.prompt — store a readable label for history.
+        body = body.model_copy(update={"prompt": display_prompt})
+        logger.info(
+            f"Detection via trained model: id={model_id} name='{rec.name}' "
+            f"classes={class_names} weights={weights_path}"
+        )
+    else:
+        # ── Natural-language mode (existing open-vocabulary behavior) ──────
+        normalized = normalize_prompt(prompt)
+        dino_prompt = normalized.dino_prompt
+        vlm_query = normalized.vlm_query
+        original_prompt = prompt
+        display_prompt = prompt
 
-    logger.info(
-        f"Prompt normalized: '{prompt}' → dino='{dino_prompt}' | "
-        f"label_mapping={label_mapping} | "
-        f"color_filters={len(color_filters)} rules"
-    )
+        # Build label mapping: English -> Chinese
+        label_mapping = {}
+        if normalized.targets:
+            for target in normalized.targets:
+                zh_label = target.get("zh", "")
+                en_phrases = target.get("en", [])
+                if zh_label and en_phrases:
+                    for en in en_phrases:
+                        # Remove trailing period and convert to lowercase
+                        en_clean = en.strip().rstrip('.').lower()
+                        label_mapping[en_clean] = zh_label
+
+        # Get color filters from LLM or use presets
+        color_filters = normalized.color_filters
+        if not color_filters and normalized.targets:
+            # Try to get preset color filters for known targets
+            for target in normalized.targets:
+                zh_label = target.get("zh", "")
+                preset = get_preset_color_filter(zh_label)
+                if preset:
+                    color_filters.extend(preset)
+                    logger.info(f"Using preset color filter for '{zh_label}'")
+
+        logger.info(
+            f"Prompt normalized: '{prompt}' → dino='{dino_prompt}' | "
+            f"label_mapping={label_mapping} | "
+            f"color_filters={len(color_filters)} rules"
+        )
 
     # ── Determine VLM setting ─────────────────────────────────────────────
     enable_vlm = body.enable_vlm if body.enable_vlm is not None else settings.VLM_ENABLED
@@ -124,9 +170,10 @@ async def start_detection(body: DetectRequest) -> DetectResponse:
             detection_interval=body.detection_interval,
             box_threshold=body.box_threshold,
             text_threshold=body.text_threshold,
-            original_prompt=prompt,
+            original_prompt=original_prompt,
             label_mapping=label_mapping,
             color_filters=color_filters,
+            weights_path=weights_path,
         )
     )
     _background_tasks.add(task)
@@ -134,13 +181,13 @@ async def start_detection(body: DetectRequest) -> DetectResponse:
 
     logger.info(
         f"Detection task queued: {task_state.task_id} | "
-        f"video={body.video_id} | prompt='{prompt}'"
+        f"video={body.video_id} | prompt='{display_prompt}'"
     )
 
     return DetectResponse(
         task_id=task_state.task_id,
         video_id=body.video_id,
-        prompt=prompt,
+        prompt=display_prompt,
         status=TaskStatus.PENDING,
     )
 

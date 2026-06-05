@@ -1,0 +1,442 @@
+"""
+app/services/training_manager.py
+--------------------------------
+Runs YOLOE training as an isolated subprocess and tracks it in PostgreSQL.
+
+Why subprocess (not a thread): the backend runs a single uvicorn worker that
+also serves the live video-detection SSE pipeline. `model.train()` is a
+multi-minute blocking GPU job; isolating it in a child process keeps the event
+loop responsive, makes the job killable, and prevents a training crash/OOM
+from taking down detection.
+
+Progress: a monitor coroutine tails `runs/train/<name>/results.csv` (one row
+per finished epoch) and writes epoch/progress/mAP into the training_jobs row.
+On exit, the child's `__YOLOE_TRAIN_JSON__ {...}` stdout line is the
+authoritative completion signal (best_pt + metrics); results.csv is the
+fallback.
+
+Concurrency: a single global training slot (one job at a time) — starting a
+job while one is active raises TrainingBusyError (→ HTTP 409).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import csv
+import json
+import os
+import re
+import sys
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
+
+from sqlalchemy import func as sql_func, select, update
+
+from app.core.config import settings
+from app.core.logging import logger
+
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent  # .../backend
+_TRAIN_SCRIPT = _BACKEND_ROOT / "YOLOWorld" / "train_yoloe.py"
+_TRAIN_JSON_PREFIX = "__YOLOE_TRAIN_JSON__"
+
+
+class TrainingBusyError(RuntimeError):
+    """Raised when a training job is requested while another is running."""
+
+
+def _slug(name: str) -> str:
+    s = re.sub(r"[^0-9A-Za-z一-鿿_-]+", "_", name).strip("_")
+    return s or "model"
+
+
+def _find_map_columns(fieldnames: list[str]) -> tuple[Optional[str], Optional[str]]:
+    """Locate the mAP50 and mAP50-95 column names in a results.csv header
+    (names vary across ultralytics versions; tolerate spaces)."""
+    m50 = m5095 = None
+    for raw in fieldnames:
+        k = raw.strip()
+        low = k.lower()
+        if "map50-95" in low or "map_0.5:0.95" in low:
+            m5095 = raw
+        elif "map50" in low or ("map_0.5" in low and "0.95" not in low):
+            m50 = raw
+    return m50, m5095
+
+
+class TrainingManager:
+    def __init__(self) -> None:
+        self._active_job_id: Optional[str] = None
+        self._lock = asyncio.Lock()
+        self._procs: dict[str, asyncio.subprocess.Process] = {}
+        self._tasks: set[asyncio.Task] = set()
+
+    @property
+    def active_job_id(self) -> Optional[str]:
+        return self._active_job_id
+
+    async def start(self, category: dict, images: list[dict], params: dict) -> str:
+        """Finalize the dataset, insert a job row, and spawn training.
+
+        `category` = {"id", "name"}; `images` = annotated [{"id","stored_path"}];
+        `params` may carry epochs/imgsz/batch/base_model. Returns job_id.
+        """
+        # ── claim the single training slot ───────────────────────────────
+        async with self._lock:
+            if self._active_job_id is not None:
+                raise TrainingBusyError(
+                    f"已有训练任务进行中（{self._active_job_id}），请等待其完成。"
+                )
+            job_id = str(uuid.uuid4())
+            self._active_job_id = job_id
+
+        try:
+            base_model = (params.get("base_model") or settings.yoloe_base_model or "").strip()
+            if not base_model:
+                raise RuntimeError(
+                    "未配置 YOLOE 基础权重（.env 的 YOLOE_BASE_MODEL / YOLO_WORLD_MODEL）。"
+                )
+            if not Path(base_model).exists():
+                raise FileNotFoundError(f"基础权重文件不存在: {base_model}")
+
+            epochs = int(params.get("epochs") or settings.TRAIN_DEFAULT_EPOCHS)
+            imgsz = int(params.get("imgsz") or settings.TRAIN_DEFAULT_IMGSZ)
+            batch = int(params.get("batch") or settings.TRAIN_DEFAULT_BATCH)
+            # Explicit None check (not `or`): workers=0 is a valid choice
+            # (load in main process) and must not fall through to the default.
+            _workers = params.get("workers")
+            workers = settings.TRAIN_DEFAULT_WORKERS if _workers is None else int(_workers)
+
+            # next version for this category (single-training lock → no race)
+            version = await self._next_version(category["id"])
+            run_name = f"{_slug(category['name'])}_v{version}_{job_id[:8]}"
+
+            # ── build the frozen dataset (off the event loop) ────────────
+            from app.services import dataset_builder
+
+            ds = await asyncio.to_thread(
+                dataset_builder.finalize,
+                category["id"], category["name"], job_id, images,
+            )
+            ds["base_model"] = base_model
+
+            await self._persist_create(
+                job_id=job_id,
+                category_id=category["id"],
+                model_name=category["name"],
+                total_epochs=epochs,
+                dataset_yaml=ds["dataset_yaml"],
+                base_model=base_model,
+                params={
+                    "epochs": epochs, "imgsz": imgsz, "batch": batch,
+                    "workers": workers,
+                    "base_model": base_model, "version": version,
+                    "num_images": ds["num_images"], "val_is_train": ds["val_is_train"],
+                },
+            )
+
+            project = str(settings.TRAIN_RUNS_DIR.resolve())
+            cmd = [
+                sys.executable, str(_TRAIN_SCRIPT),
+                "--data", ds["dataset_yaml"],
+                "--model", base_model,
+                "--epochs", str(epochs),
+                "--imgsz", str(imgsz),
+                "--batch", str(batch),
+                "--workers", str(workers),
+                "--device", settings.DEVICE,
+                "--project", project,
+                "--name", run_name,
+                "--json",
+            ]
+            env = dict(os.environ)
+            env["PYTHONUNBUFFERED"] = "1"
+            env.setdefault("YOLO_OFFLINE", "1")
+            env.setdefault("ULTRALYTICS_OFFLINE", "1")
+            # Don't stream tqdm '\r' progress bars into the captured pipe — they
+            # are huge and newline-free. Progress is read from results.csv (see
+            # _poll_progress); completion comes from the JSON sentinel below.
+            env.setdefault("TQDM_DISABLE", "1")
+
+            logger.info(f"Spawning training job {job_id}: {' '.join(cmd)}")
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=str(_BACKEND_ROOT),
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            self._procs[job_id] = proc
+
+            run_dir = settings.TRAIN_RUNS_DIR.resolve() / run_name
+            await self._persist_update(
+                job_id, status="running", pid=proc.pid, started_at=sql_func.now()
+            )
+
+            task = asyncio.create_task(
+                self._monitor(job_id, proc, run_dir, epochs, category, version, ds)
+            )
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+            return job_id
+
+        except Exception as exc:
+            # Failed before/at spawn — release the slot and mark the job failed.
+            self._active_job_id = None
+            self._procs.pop(job_id, None)
+            await self._persist_update(job_id, status="failed", error=str(exc))
+            logger.error(f"Training job {job_id} failed to start: {exc}")
+            raise
+
+    async def _monitor(
+        self, job_id: str, proc: asyncio.subprocess.Process,
+        run_dir: Path, total_epochs: int, category: dict, version: int, ds: dict,
+    ) -> None:
+        stdout_buf: list[str] = []
+
+        async def _drain() -> None:
+            # Read fixed-size chunks, NOT lines. ultralytics/tqdm redraw the
+            # epoch progress bar in place with '\r' and emit no '\n' until the
+            # bar closes, so one "line" exceeds asyncio's 64 KiB StreamReader
+            # limit and `async for`/readline() raises LimitOverrunError, killing
+            # this task. Once the reader dies the child's stdout socket backs up
+            # and the training process blocks forever in write(). read(n) never
+            # raises on long lines.
+            assert proc.stdout is not None
+            while True:
+                chunk = await proc.stdout.read(65536)
+                if not chunk:
+                    break
+                stdout_buf.append(chunk.decode(errors="replace"))
+                if len(stdout_buf) > 600:
+                    del stdout_buf[0]
+
+        drain_task = asyncio.create_task(_drain())
+        wait_task = asyncio.ensure_future(proc.wait())
+        try:
+            while not wait_task.done():
+                done, _ = await asyncio.wait({wait_task}, timeout=3.0)
+                if wait_task in done:
+                    break
+                await self._poll_progress(job_id, run_dir, total_epochs)
+            await wait_task
+            try:
+                await asyncio.wait_for(drain_task, timeout=5.0)
+            except (asyncio.TimeoutError, Exception):
+                drain_task.cancel()
+
+            rc = proc.returncode
+            if rc == 0:
+                info = self._parse_sentinel(stdout_buf)
+                best_pt = (info or {}).get("best_pt") or str(run_dir / "weights" / "best.pt")
+                metrics = (info or {}).get("metrics") or self._read_last_metrics(run_dir)
+                m50, m5095 = self._pick_map(metrics)
+                if not Path(best_pt).exists():
+                    raise FileNotFoundError(f"训练结束但未找到 best.pt: {best_pt}")
+
+                await self._persist_update(
+                    job_id, status="finished", progress=1.0,
+                    current_epoch=total_epochs, metrics=metrics,
+                    metric_map50=m50, metric_map50_95=m5095,
+                    best_pt_path=best_pt, finished_at=sql_func.now(),
+                )
+                await self._insert_trained_model(
+                    job_id=job_id, category=category, version=version,
+                    best_pt=best_pt, base_model=ds.get("base_model"),
+                    dataset_yaml=ds["dataset_yaml"], num_images=ds["num_images"],
+                    metrics=metrics,
+                )
+                await self._set_category_status(category["id"], "trained")
+                logger.info(f"Training job {job_id} finished: best={best_pt} mAP50={m50}")
+            else:
+                tail = "".join(stdout_buf)[-4000:]
+                await self._persist_update(
+                    job_id, status="failed",
+                    error=f"训练进程退出码 {rc}。\n--- 日志尾部 ---\n{tail}",
+                    finished_at=sql_func.now(),
+                )
+                logger.error(f"Training job {job_id} failed (rc={rc})")
+        except Exception as exc:
+            await self._persist_update(
+                job_id, status="failed", error=str(exc), finished_at=sql_func.now()
+            )
+            logger.error(f"Training job {job_id} monitor error: {exc}")
+        finally:
+            self._procs.pop(job_id, None)
+            self._active_job_id = None
+
+    async def cancel(self, job_id: str) -> bool:
+        """Terminate a running training subprocess (Phase 2 endpoint)."""
+        proc = self._procs.get(job_id)
+        if proc is None or proc.returncode is not None:
+            return False
+        try:
+            proc.terminate()
+        except ProcessLookupError:
+            return False
+        await self._persist_update(
+            job_id, status="cancelled", error="用户取消", finished_at=sql_func.now()
+        )
+        return True
+
+    # ── progress / metrics parsing ──────────────────────────────────────
+
+    async def _poll_progress(self, job_id: str, run_dir: Path, total_epochs: int) -> None:
+        csv_path = run_dir / "results.csv"
+        if not csv_path.exists():
+            return
+        try:
+            rows = self._read_csv_rows(csv_path)
+            if not rows:
+                return
+            current_epoch = len(rows)
+            m50, m5095 = self._pick_map(self._row_to_metrics(rows[-1]))
+            progress = min(current_epoch / max(total_epochs, 1), 0.99)
+            await self._persist_update(
+                job_id, current_epoch=current_epoch, progress=progress,
+                metric_map50=m50, metric_map50_95=m5095,
+            )
+        except Exception as exc:  # pragma: no cover - best effort
+            logger.debug(f"poll_progress({job_id}) skipped: {exc}")
+
+    @staticmethod
+    def _read_csv_rows(csv_path: Path) -> list[dict]:
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, skipinitialspace=True)
+            return [{(k or "").strip(): v for k, v in row.items()} for row in reader]
+
+    def _read_last_metrics(self, run_dir: Path) -> dict:
+        csv_path = run_dir / "results.csv"
+        if not csv_path.exists():
+            return {}
+        try:
+            rows = self._read_csv_rows(csv_path)
+            return self._row_to_metrics(rows[-1]) if rows else {}
+        except Exception:
+            return {}
+
+    @staticmethod
+    def _row_to_metrics(row: dict) -> dict:
+        out: dict = {}
+        for k, v in row.items():
+            try:
+                out[k.strip()] = float(v)
+            except (TypeError, ValueError):
+                continue
+        return out
+
+    @staticmethod
+    def _pick_map(metrics: dict) -> tuple[Optional[float], Optional[float]]:
+        if not metrics:
+            return None, None
+        m50, m5095 = TrainingManager._find_map_keys(list(metrics.keys()))
+        return (metrics.get(m50) if m50 else None,
+                metrics.get(m5095) if m5095 else None)
+
+    @staticmethod
+    def _find_map_keys(keys: list[str]) -> tuple[Optional[str], Optional[str]]:
+        return _find_map_columns(keys)
+
+    @staticmethod
+    def _parse_sentinel(buf: list[str]) -> Optional[dict]:
+        # buf now holds arbitrary chunks (not whole lines), so the sentinel may
+        # span a chunk boundary — search the joined text, not each element.
+        text = "".join(buf)
+        idx = text.rfind(_TRAIN_JSON_PREFIX)
+        if idx == -1:
+            return None
+        rest = text[idx + len(_TRAIN_JSON_PREFIX):].split("\n", 1)[0].strip()
+        try:
+            return json.loads(rest)
+        except json.JSONDecodeError:
+            return None
+
+    # ── DB persistence (best-effort, mirrors task_manager) ──────────────
+
+    async def _next_version(self, category_id: str) -> int:
+        try:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import TrainedModelRecord
+            async with AsyncSessionLocal() as session:
+                n = await session.scalar(
+                    select(sql_func.count(TrainedModelRecord.id)).where(
+                        TrainedModelRecord.category_id == category_id
+                    )
+                )
+            return int(n or 0) + 1
+        except Exception as exc:
+            logger.warning(f"next_version failed, defaulting to 1: {exc}")
+            return 1
+
+    async def _persist_create(self, job_id: str, **fields: Any) -> None:
+        try:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import TrainingJobRecord
+            async with AsyncSessionLocal() as session:
+                session.add(TrainingJobRecord(id=job_id, status="pending", **fields))
+                await session.commit()
+        except Exception as exc:
+            logger.warning(f"DB persist (job create) failed for {job_id}: {exc}")
+
+    async def _persist_update(self, job_id: str, **fields: Any) -> None:
+        if not fields:
+            return
+        try:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import TrainingJobRecord
+            async with AsyncSessionLocal() as session:
+                await session.execute(
+                    update(TrainingJobRecord)
+                    .where(TrainingJobRecord.id == job_id)
+                    .values(**fields)
+                )
+                await session.commit()
+        except Exception as exc:
+            logger.warning(f"DB persist (job update) failed for {job_id}: {exc}")
+
+    async def _insert_trained_model(
+        self, job_id: str, category: dict, version: int, best_pt: str,
+        base_model: Optional[str], dataset_yaml: str, num_images: int, metrics: dict,
+    ) -> None:
+        try:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import TrainingJobRecord, TrainedModelRecord
+            async with AsyncSessionLocal() as session:
+                job = await session.get(TrainingJobRecord, job_id)
+                session.add(TrainedModelRecord(
+                    id=str(uuid.uuid4()),
+                    name=category["name"],
+                    version=version,
+                    category_id=category["id"],
+                    training_job_id=job_id,
+                    weights_path=best_pt,
+                    base_model=base_model,
+                    class_names={"0": category["name"]},  # Phase 1 single-class
+                    dataset_yaml=dataset_yaml,
+                    num_images=num_images,
+                    metrics=metrics,
+                    trained_started_at=getattr(job, "started_at", None),
+                    trained_finished_at=datetime.now(timezone.utc),
+                ))
+                await session.commit()
+        except Exception as exc:
+            logger.warning(f"DB insert trained_model failed for {job_id}: {exc}")
+
+    async def _set_category_status(self, category_id: str, status: str) -> None:
+        try:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import CategoryRecord
+            async with AsyncSessionLocal() as session:
+                await session.execute(
+                    update(CategoryRecord)
+                    .where(CategoryRecord.id == category_id)
+                    .values(status=status)
+                )
+                await session.commit()
+        except Exception as exc:
+            logger.warning(f"set_category_status failed for {category_id}: {exc}")
+
+
+# Global singleton
+training_manager = TrainingManager()

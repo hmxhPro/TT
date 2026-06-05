@@ -53,10 +53,18 @@ class DetectRequest(BaseModel):
         description="Original uploaded filename — used for history display only.",
     )
     prompt: str = Field(
-        ...,
+        default="",
         description=(
             "Natural language description of the object to detect. "
-            "E.g. '帮我检测视频中的菜园'"
+            "E.g. '帮我检测视频中的菜园'. Leave empty when `model_id` is given. "
+            "Exactly one of `prompt` / `model_id` must be supplied (validated in the endpoint)."
+        ),
+    )
+    model_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "Use a trained model's baked-in classes instead of a natural-language "
+            "prompt. Mutually exclusive with `prompt`."
         ),
     )
     detection_interval: Optional[int] = Field(
@@ -194,3 +202,144 @@ class TaskHistoryItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     finished_at: Optional[datetime] = None
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# YOLOE custom-training workflow (REQ1/REQ2/REQ3)
+# ════════════════════════════════════════════════════════════════════════════
+
+# ── Categories ──────────────────────────────────────────────────────────────
+
+class CategoryCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128, description="类别名，将作为训练后模型名")
+    description: Optional[str] = None
+
+
+class CategoryItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    description: Optional[str] = None
+    status: str = "draft"
+    image_count: int = 0
+    annotated_count: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+
+# ── Dataset images + annotation ─────────────────────────────────────────────
+
+class DatasetImageItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    category_id: str
+    filename: str
+    width: int = 0
+    height: int = 0
+    annotation_status: str = "pending"
+    box_count: int = 0
+    created_at: datetime
+
+
+class AnnotationBox(BaseModel):
+    """One YOLO-format box: class id + normalized center/size in [0, 1]."""
+    cls: int = Field(default=0, ge=0)
+    cx: float = Field(..., ge=0.0, le=1.0)
+    cy: float = Field(..., ge=0.0, le=1.0)
+    w: float = Field(..., gt=0.0, le=1.0)
+    h: float = Field(..., gt=0.0, le=1.0)
+
+
+class AnnotationPayload(BaseModel):
+    """All boxes for a single image. Empty list = a background/negative sample."""
+    boxes: List[AnnotationBox] = []
+
+
+class DatasetImportResult(BaseModel):
+    """Summary returned after importing a pre-annotated YOLO dataset folder
+    into a category (boxes folded to the single category class)."""
+    imported_images: int = 0   # images successfully stored + registered
+    with_annotation: int = 0   # imported images that had >=1 valid box
+    background: int = 0        # imported images with no/empty label (background)
+    skipped_files: int = 0     # non-image / unreadable files ignored
+    message: str = ""
+
+
+# ── Training jobs ────────────────────────────────────────────────────────────
+
+class TrainRequest(BaseModel):
+    epochs: Optional[int] = Field(default=None, ge=1, le=1000)
+    imgsz: Optional[int] = Field(default=None, ge=64, le=2048)
+    batch: Optional[int] = Field(default=None)
+    base_model: Optional[str] = Field(default=None, description="覆盖训练基础权重（绝对路径）")
+
+
+class TrainResponse(BaseModel):
+    job_id: str
+    category_id: str
+    model_name: str
+    status: str
+
+
+class TrainingJobItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    category_id: str
+    model_name: str
+    status: str
+    progress: float = 0.0
+    current_epoch: int = 0
+    total_epochs: int = 0
+    dataset_yaml: Optional[str] = None
+    base_model: Optional[str] = None
+    metric_map50: Optional[float] = None
+    metric_map50_95: Optional[float] = None
+    metrics: Optional[dict] = None
+    best_pt_path: Optional[str] = None
+    error: Optional[str] = None
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+
+
+# ── Trained model registry (REQ3) ───────────────────────────────────────────
+
+class TrainedModelItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    version: int = 1
+    category_id: str
+    training_job_id: str
+    weights_path: str
+    base_model: Optional[str] = None
+    class_names: Optional[dict] = None
+    dataset_yaml: Optional[str] = None
+    num_images: int = 0
+    metrics: Optional[dict] = None
+    trained_started_at: Optional[datetime] = None
+    trained_finished_at: Optional[datetime] = None
+    created_at: datetime
+
+
+# ── Image detection (REQ1) ──────────────────────────────────────────────────
+
+class ImageDetectResultItem(BaseModel):
+    image_index: int
+    filename: str
+    width: int = 0
+    height: int = 0
+    detections: List[Detection] = []
+    annotated_url: str
+
+
+class ImageDetectResponse(BaseModel):
+    batch_id: str
+    mode: str                      # "zeroshot" | "model"
+    model_id: Optional[str] = None
+    class_names: List[str] = []
+    results: List[ImageDetectResultItem] = []

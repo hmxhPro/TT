@@ -343,11 +343,77 @@ class Florence2Detector(BaseDetector):
 
 
 # ────────────────────────────────────────────────────────────────────────────
+# Trained-model detector (uses a fine-tuned model's baked-in classes)
+# ────────────────────────────────────────────────────────────────────────────
+
+class TrainedModelDetector(BaseDetector):
+    """
+    Adapter that runs a user-trained model (best.pt) inside the video pipeline.
+
+    Unlike the open-vocabulary detectors, this ignores the text `prompt`: the
+    model's classes are baked into its weights (`model.names`). It delegates to
+    the still-image detection registry (`image_detector.detect_with_model`) so
+    model loading, the per-model LRU cache, the YOLOE→YOLO fallback and the
+    per-model predict lock are all reused — no duplicate model-loading code.
+    """
+
+    def __init__(self, device: str, weights_path: str) -> None:
+        super().__init__(device)
+        self.weights_path = weights_path
+
+    def load(self) -> None:
+        # No-op: the underlying ultralytics model is loaded lazily (and cached)
+        # by the image-detection registry on the first predict() call. The API
+        # layer already fails fast if the weights file is missing.
+        return
+
+    def predict(
+        self,
+        image: np.ndarray,
+        prompt: str,            # ignored — classes come from the weights
+        box_threshold: float,
+        text_threshold: float,  # ignored — no text head
+    ) -> List[RawDetection]:
+        # Lazy import to avoid a circular import (image_detector imports nothing
+        # from this module at import time, but keep it lazy to be safe).
+        from app.services.image_detector import detect_with_model
+
+        detections = detect_with_model(self.weights_path, image, conf=box_threshold)
+        return [
+            RawDetection(
+                x1=float(d.bbox.x1), y1=float(d.bbox.y1),
+                x2=float(d.bbox.x2), y2=float(d.bbox.y2),
+                score=float(d.score), label=str(d.label),
+            )
+            for d in detections
+        ]
+
+
+# ────────────────────────────────────────────────────────────────────────────
 # Factory / Singleton
 # ────────────────────────────────────────────────────────────────────────────
 
 _detector_instance: BaseDetector | None = None
 _detector_lock = __import__("threading").Lock()
+
+# Per-weights-path cache of trained-model detectors. These are nearly stateless
+# (the heavy model lives in the shared image-detection registry), so caching is
+# just to avoid re-creating the thin adapter for each task on the same model.
+_trained_detectors: dict[str, "TrainedModelDetector"] = {}
+_trained_detectors_lock = __import__("threading").Lock()
+
+
+def get_trained_detector(weights_path: str) -> TrainedModelDetector:
+    """Return a cached TrainedModelDetector for the given weights file."""
+    with _trained_detectors_lock:
+        det = _trained_detectors.get(weights_path)
+        if det is None:
+            det = TrainedModelDetector(device=settings.DEVICE, weights_path=weights_path)
+            det.load()
+            _trained_detectors[weights_path] = det
+            logger.info(f"Trained-model detector ready: {weights_path}")
+        return det
+
 
 
 def get_detector() -> BaseDetector:

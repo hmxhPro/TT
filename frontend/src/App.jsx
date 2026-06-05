@@ -17,19 +17,36 @@ import React, { useMemo, useState } from 'react'
 import {
   Play, RotateCcw, Settings, Trash2, Sparkles, Activity, CircleDot,
   Target, Film, Zap, LayoutGrid, Database, Cpu, Gauge, Orbit, PackageSearch,
+  GraduationCap, MousePointer2,
 } from 'lucide-react'
 
 import VideoUploader from './components/VideoUploader'
 import PromptInput from './components/PromptInput'
 import TaskCard from './components/TaskCard'
 import HistoryPanel from './components/HistoryPanel'
+import CategoryManager from './components/CategoryManager'
+import KonvaAnnotator from './components/KonvaAnnotator'
+import DatasetImporter from './components/DatasetImporter'
+import TrainPanel from './components/TrainPanel'
+import ModelListPanel from './components/ModelListPanel'
+import DetectModelSelect from './components/DetectModelSelect'
 import { useDetectionTasks } from './hooks/useDetectionTasks'
+import { getCategory } from './services/api'
 
 export default function App() {
   const [prompt, setPrompt] = useState('')
   const [detInterval, setDetInterval] = useState(5)
   const [enableVlm, setEnableVlm] = useState(true)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  // Trained-model selection for the detection workspace ('' = open-vocab).
+  const [selectedModelId, setSelectedModelId] = useState('')
+
+  // ── Training workspace state ───────────────────────────────────────────
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [catReloadToken, setCatReloadToken] = useState(0)
+  const [modelReloadToken, setModelReloadToken] = useState(0)
+  // Dataset source for the selected category: online annotation vs. import.
+  const [trainTab, setTrainTab] = useState('annotate')
 
   const {
     tasks, addFiles, removeTask, clearAll, resetOne, startAll, startOne,
@@ -50,21 +67,46 @@ export default function App() {
     (s) => (counts[s] || 0) > 0
   )
   const queuedOrFailed = (counts.queued || 0) + (counts.failed || 0) + (counts.cancelled || 0)
-  const canStart = hasWork && prompt.trim().length > 0 && queuedOrFailed > 0 && !anyActive
+  const canStart = hasWork && (selectedModelId || prompt.trim().length > 0) && queuedOrFailed > 0 && !anyActive
+
+  // Selecting a trained model defaults VLM off (the model is self-sufficient);
+  // it stays user-toggleable in advanced settings. Clearing restores the default.
+  const handleSelectModel = (id) => {
+    setSelectedModelId(id)
+    setEnableVlm(!id)
+  }
 
   const handleStartAll = async () => {
     if (!canStart) return
-    await startAll(prompt.trim(), detInterval, enableVlm)
+    await startAll(prompt.trim(), detInterval, enableVlm, selectedModelId || undefined)
   }
 
   const handleRetry = (id) => {
-    if (!prompt.trim()) {
-      alert('请先填写检测目标')
+    if (!selectedModelId && !prompt.trim()) {
+      alert('请先填写检测目标或选择已训练模型')
       return
     }
     resetOne(id)
     // Give state a tick before restarting
-    setTimeout(() => startOne(id, prompt.trim(), detInterval, enableVlm), 30)
+    setTimeout(() => startOne(id, prompt.trim(), detInterval, enableVlm, selectedModelId || undefined), 30)
+  }
+
+  // Re-fetch the selected category so TrainPanel sees fresh annotated/image
+  // counts, and nudge the category list to refresh its own counts.
+  const refreshSelectedCategory = async () => {
+    if (!selectedCategory) return
+    try {
+      setSelectedCategory(await getCategory(selectedCategory.id))
+    } catch {
+      /* keep stale copy on transient failure */
+    }
+    setCatReloadToken((t) => t + 1)
+  }
+
+  // After a training run finishes: reload the model list + refresh counts.
+  const handleTrained = () => {
+    setModelReloadToken((t) => t + 1)
+    refreshSelectedCategory()
   }
 
   return (
@@ -120,7 +162,7 @@ export default function App() {
           </p>
 
           {/* CTA cards */}
-          <div className="mt-10 grid md:grid-cols-2 gap-5 text-left">
+          <div className="mt-10 grid md:grid-cols-3 gap-5 text-left">
             <a href="#workspace" className="card p-5 hover:shadow-soft transition-shadow group">
               <div className="flex items-start gap-3">
                 <span className="p-2.5 rounded-xl bg-brand-500 text-white">
@@ -149,6 +191,22 @@ export default function App() {
                   </p>
                   <p className="mt-3 text-ink-800 text-sm flex items-center gap-1">
                     查看模块 <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                  </p>
+                </div>
+              </div>
+            </a>
+            <a href="#training" className="card p-5 hover:shadow-soft transition-shadow group">
+              <div className="flex items-start gap-3">
+                <span className="p-2.5 rounded-xl bg-emerald-500 text-white">
+                  <GraduationCap size={18} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-ink-900">训练自定义模型</h3>
+                  <p className="text-ink-500 text-sm mt-1">
+                    创建类别、上传并框选目标，一键训练属于你自己的检测模型。
+                  </p>
+                  <p className="mt-3 text-emerald-600 text-sm flex items-center gap-1">
+                    开始训练 <span className="group-hover:translate-x-0.5 transition-transform">→</span>
                   </p>
                 </div>
               </div>
@@ -201,11 +259,20 @@ export default function App() {
                 hasTasks={hasWork}
               />
 
-              <PromptInput
-                value={prompt}
-                onChange={setPrompt}
+              <DetectModelSelect
+                value={selectedModelId}
+                onChange={handleSelectModel}
                 disabled={anyActive}
+                reloadToken={modelReloadToken}
               />
+
+              {!selectedModelId && (
+                <PromptInput
+                  value={prompt}
+                  onChange={setPrompt}
+                  disabled={anyActive}
+                />
+              )}
 
               {/* Advanced toggle */}
               <button
@@ -338,6 +405,55 @@ export default function App() {
         </div>
       </section>
 
+      {/* ─── Training workspace ────────────────────────────────────────── */}
+      <section id="training" className="max-w-7xl mx-auto w-full px-6 py-14 border-t border-ink-200/60">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-ink-900">模型训练工作台</h2>
+          <p className="mt-2 text-ink-500 text-sm">
+            创建类别 · 在线标注或上传已标注数据集 · 一键训练专属检测模型
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-[22rem_1fr] gap-6 items-start">
+          {/* ── Left: category / train / models ───────────────────── */}
+          <aside className="flex flex-col gap-5">
+            <CategoryManager
+              selectedId={selectedCategory?.id ?? null}
+              onSelect={setSelectedCategory}
+              reloadToken={catReloadToken}
+            />
+            <TrainPanel category={selectedCategory} onTrained={handleTrained} />
+            <ModelListPanel reloadToken={modelReloadToken} />
+          </aside>
+
+          {/* ── Right: annotate online OR import an annotated dataset ─── */}
+          <section className="min-w-0">
+            <div className="flex items-center gap-2 mb-4">
+              <TabButton
+                active={trainTab === 'annotate'}
+                onClick={() => setTrainTab('annotate')}
+                icon={<MousePointer2 size={15} />}
+              >
+                在线标注
+              </TabButton>
+              <TabButton
+                active={trainTab === 'import'}
+                onClick={() => setTrainTab('import')}
+                icon={<Database size={15} />}
+              >
+                上传数据集
+              </TabButton>
+            </div>
+
+            {trainTab === 'annotate' ? (
+              <KonvaAnnotator category={selectedCategory} onDataChanged={refreshSelectedCategory} />
+            ) : (
+              <DatasetImporter category={selectedCategory} onDataChanged={refreshSelectedCategory} />
+            )}
+          </section>
+        </div>
+      </section>
+
       {/* ─── Platform modules ──────────────────────────────────────────── */}
       <section id="modules" className="max-w-7xl mx-auto w-full px-6 py-16">
         <div className="text-center mb-10">
@@ -428,6 +544,24 @@ function StatRow({ label, value, tone }) {
       <span className="text-ink-500">{label}</span>
       <span className={`font-mono text-right ${toneMap[tone] || 'text-ink-800'}`}>{value}</span>
     </>
+  )
+}
+
+function TabButton({ active, onClick, icon, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-colors',
+        active
+          ? 'bg-brand-500 text-white border-brand-500 shadow-brand'
+          : 'bg-white text-ink-600 border-ink-200 hover:border-brand-300 hover:text-brand-600',
+      ].join(' ')}
+    >
+      {icon}
+      {children}
+    </button>
   )
 }
 

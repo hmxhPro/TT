@@ -21,6 +21,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import detect, history, upload
+from app.api import categories, dataset, training, image_detect
+from app.api import models as yoloe_models
 from app.core.config import settings
 from app.core.logging import logger, setup_logging
 
@@ -56,7 +58,7 @@ async def lifespan(app: FastAPI):
     try:
         from sqlalchemy import update, func as sql_func
         from app.db.session import AsyncSessionLocal, init_db
-        from app.db.models import TaskRecord
+        from app.db.models import TaskRecord, TrainingJobRecord
 
         await init_db()
         async with AsyncSessionLocal() as session:
@@ -71,9 +73,22 @@ async def lifespan(app: FastAPI):
                     finished_at=sql_func.now(),
                 )
             )
+            # Training subprocesses don't survive a backend restart — sweep
+            # any rows frozen at pending/running to failed.
+            train_result = await session.execute(
+                update(TrainingJobRecord)
+                .where(TrainingJobRecord.status.in_(["pending", "running"]))
+                .values(
+                    status="failed",
+                    error="服务非正常重启，训练中断",
+                    finished_at=sql_func.now(),
+                )
+            )
             await session.commit()
             if result.rowcount:
                 logger.info(f"Swept {result.rowcount} stale active task(s) → failed")
+            if train_result.rowcount:
+                logger.info(f"Swept {train_result.rowcount} stale training job(s) → failed")
     except Exception as exc:
         logger.warning(
             f"DB unavailable, history persistence disabled: {exc}\n"
@@ -128,6 +143,12 @@ def create_app() -> FastAPI:
     app.include_router(upload.router, prefix="/api", tags=["Upload"])
     app.include_router(detect.router, prefix="/api", tags=["Detection"])
     app.include_router(history.router, prefix="/api", tags=["History"])
+    # YOLOE custom-training workflow (REQ1/REQ2/REQ3)
+    app.include_router(categories.router, prefix="/api", tags=["YOLOE Categories"])
+    app.include_router(dataset.router, prefix="/api", tags=["YOLOE Dataset"])
+    app.include_router(training.router, prefix="/api", tags=["YOLOE Training"])
+    app.include_router(yoloe_models.router, prefix="/api", tags=["YOLOE Models"])
+    app.include_router(image_detect.router, prefix="/api", tags=["YOLOE Image Detection"])
 
     # ── Health check ──────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])

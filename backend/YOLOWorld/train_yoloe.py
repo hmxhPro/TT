@@ -95,7 +95,15 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Resume from the most recent checkpoint in <project>/<name>.",
     )
-    parser.add_argument("--workers", type=int, default=8, help="DataLoader worker processes.")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=2,
+        help="DataLoader worker processes per loader. Low default (Ultralytics "
+             "uses 8) for memory-constrained hosts: train+val+final-val loaders "
+             "each fork this many, and on a 15 GB WSL2 box 8 each deadlocked the "
+             "worker IPC at the final epoch. Use 0 to load in the main process.",
+    )
     parser.add_argument(
         "--patience",
         type=int,
@@ -114,54 +122,101 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Initial learning rate (Ultralytics default if unset).",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="On success, print a machine-readable result line "
+             "'__YOLOE_TRAIN_JSON__ {...}' to stdout (best_pt + metrics). "
+             "Used by the backend training runner.",
+    )
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
+# Sentinel prefix the backend training runner scans stdout for.
+TRAIN_JSON_PREFIX = "__YOLOE_TRAIN_JSON__"
 
-    data_path = Path(args.data)
+
+def _extract_metrics(results) -> dict:
+    """Best-effort pull of float metrics (mAP/precision/recall/...) from an
+    Ultralytics training results object. Returns {} if unavailable."""
+    out: dict = {}
+    rd = getattr(results, "results_dict", None)
+    if isinstance(rd, dict):
+        for k, v in rd.items():
+            try:
+                out[str(k)] = float(v)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def run_training(
+    data: str,
+    model: str,
+    epochs: int = 100,
+    imgsz: int = 640,
+    batch: int = 16,
+    device: str | None = None,
+    project: str | None = None,
+    name: str = "yoloe_exp",
+    resume: bool = False,
+    workers: int = 8,
+    patience: int = 50,
+    freeze: int | None = None,
+    lr0: float | None = None,
+) -> dict:
+    """Train a YOLOE model and return a result dict.
+
+    Returns: {save_dir, best_pt, last_pt, metrics, elapsed}.
+    Raises FileNotFoundError if the dataset YAML is missing.
+
+    This is the API-callable core (the FastAPI training runner spawns this
+    module as a subprocess via `main()`); the CLI `main()` is a thin wrapper.
+    """
+    device = device or settings.DEVICE
+    project = project or str(_BACKEND_ROOT / "runs" / "train")
+
+    data_path = Path(data)
     if not data_path.exists():
-        logger.error(f"Dataset YAML not found: {data_path}")
-        return 1
+        raise FileNotFoundError(f"Dataset YAML not found: {data_path}")
 
     logger.info("─" * 60)
     logger.info("YOLOE training run")
     logger.info(f"  data    : {data_path}")
-    logger.info(f"  model   : {args.model}")
-    logger.info(f"  epochs  : {args.epochs}")
-    logger.info(f"  imgsz   : {args.imgsz}")
-    logger.info(f"  batch   : {args.batch}")
-    logger.info(f"  device  : {args.device}")
-    logger.info(f"  project : {args.project}")
-    logger.info(f"  name    : {args.name}")
+    logger.info(f"  model   : {model}")
+    logger.info(f"  epochs  : {epochs}")
+    logger.info(f"  imgsz   : {imgsz}")
+    logger.info(f"  batch   : {batch}")
+    logger.info(f"  device  : {device}")
+    logger.info(f"  project : {project}")
+    logger.info(f"  name    : {name}")
     logger.info("─" * 60)
 
-    model = _load_yoloe_model(args.model)
+    model_obj = _load_yoloe_model(model)
 
     train_kwargs = dict(
         data=str(data_path),
-        epochs=args.epochs,
-        imgsz=args.imgsz,
-        batch=args.batch,
-        device=args.device,
-        project=args.project,
-        name=args.name,
-        resume=args.resume,
-        workers=args.workers,
-        patience=args.patience,
+        epochs=epochs,
+        imgsz=imgsz,
+        batch=batch,
+        device=device,
+        project=project,
+        name=name,
+        resume=resume,
+        workers=workers,
+        patience=patience,
     )
-    if args.freeze is not None:
-        train_kwargs["freeze"] = args.freeze
-    if args.lr0 is not None:
-        train_kwargs["lr0"] = args.lr0
+    if freeze is not None:
+        train_kwargs["freeze"] = freeze
+    if lr0 is not None:
+        train_kwargs["lr0"] = lr0
 
     start = time.time()
-    results = model.train(**train_kwargs)
+    results = model_obj.train(**train_kwargs)
     elapsed = time.time() - start
 
     # Resolve best.pt path. Ultralytics exposes save_dir on the results object.
-    save_dir = Path(getattr(results, "save_dir", Path(args.project) / args.name))
+    save_dir = Path(getattr(results, "save_dir", Path(project) / name))
     best_pt = save_dir / "weights" / "best.pt"
     last_pt = save_dir / "weights" / "last.pt"
 
@@ -169,11 +224,49 @@ def main() -> int:
     logger.info(f"Training finished in {elapsed / 60:.1f} min")
     logger.info(f"  best weights : {best_pt}")
     logger.info(f"  last weights : {last_pt}")
+    logger.info("─" * 60)
+
+    return {
+        "save_dir": str(save_dir),
+        "best_pt": str(best_pt),
+        "last_pt": str(last_pt),
+        "metrics": _extract_metrics(results),
+        "elapsed": elapsed,
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        info = run_training(
+            data=args.data,
+            model=args.model,
+            epochs=args.epochs,
+            imgsz=args.imgsz,
+            batch=args.batch,
+            device=args.device,
+            project=args.project,
+            name=args.name,
+            resume=args.resume,
+            workers=args.workers,
+            patience=args.patience,
+            freeze=args.freeze,
+            lr0=args.lr0,
+        )
+    except FileNotFoundError as exc:
+        logger.error(str(exc))
+        return 1
+
     logger.info(
         "To use these weights in the detection backend, set in backend/.env:\n"
-        f"    YOLO_WORLD_MODEL={best_pt}"
+        f"    YOLO_WORLD_MODEL={info['best_pt']}"
     )
-    logger.info("─" * 60)
+
+    if args.json:
+        import json
+        # Authoritative completion signal for the backend training runner.
+        print(f"{TRAIN_JSON_PREFIX} {json.dumps(info)}", flush=True)
+
     return 0
 
 
