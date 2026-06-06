@@ -17,8 +17,21 @@ import threading
 import uuid
 from typing import Any, Dict, Optional
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.models.schemas import DetectRequest, FrameResult, TaskState, TaskStatus
+from app.core.config import settings
 from app.core.logging import logger
+
+
+# Statuses a task can no longer leave — used for the in-memory LRU (R-5) and
+# to decide when a task's frame results can be released.
+_TERMINAL_STATUSES = frozenset({
+    TaskStatus.FINISHED,
+    TaskStatus.FAILED,
+    TaskStatus.CANCELLED,
+    TaskStatus.EARLY_TERMINATED,
+})
 
 
 class TaskManager:
@@ -60,7 +73,7 @@ class TaskManager:
             status=TaskStatus.PENDING,
         )
         self._tasks[task_id] = state
-        self._queues[task_id] = asyncio.Queue()
+        self._queues[task_id] = asyncio.Queue(maxsize=settings.TASK_QUEUE_MAXSIZE)
         # Initialize control flags — "pause" starts "set" (i.e. not paused).
         self._cancel_flags[task_id] = threading.Event()
         self._terminate_flags[task_id] = threading.Event()
@@ -78,33 +91,80 @@ class TaskManager:
         return list(self._tasks.values())
 
     # ── Frame streaming ──────────────────────────────────────────────────────
+    # The per-task queue is BOUNDED (settings.TASK_QUEUE_MAXSIZE). A client that
+    # opens the SSE stream and walks away would otherwise let the queue grow with
+    # full base64 frames until the single process OOMs (R-4). So:
+    #   • frames are droppable — when the queue is full we drop the OLDEST frame
+    #     to keep the stream real-time (the frame is also on disk + in results);
+    #   • control/terminal sentinels (done/error/packaging/…) are NEVER dropped
+    #     and NEVER block — a blocking put on a full queue would otherwise hang
+    #     the pipeline coroutine forever and never release the GPU semaphore.
+
+    def _put_sentinel(self, task_id: str, item: tuple) -> None:
+        """Enqueue a non-frame event without blocking, guaranteeing it lands.
+
+        If the queue is full, rebuild it keeping existing sentinels in FIFO
+        order and dropping frames to make room, then append `item`. Sentinels
+        are few and tiny; frames are the bulk and safely droppable.
+        """
+        q = self._queues.get(task_id)
+        if q is None:
+            return
+        try:
+            q.put_nowait(item)
+            return
+        except asyncio.QueueFull:
+            pass
+        kept: list[tuple] = []
+        while True:
+            try:
+                ev = q.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            if ev[0] != "frame":      # preserve every non-frame event
+                kept.append(ev)
+        kept.append(item)
+        for ev in kept:
+            try:
+                q.put_nowait(ev)
+            except asyncio.QueueFull:
+                break                 # unreachable in practice: kept << maxsize
 
     async def push_frame(self, task_id: str, frame: FrameResult) -> None:
-        """Called by the worker after each frame is processed."""
-        if task_id in self._queues:
-            await self._queues[task_id].put(("frame", frame))
+        """Called by the worker after each frame is processed.
+
+        Drops the oldest queued frame when full (bounded, drop-oldest) so a
+        disconnected consumer cannot drive the queue to OOM.
+        """
+        q = self._queues.get(task_id)
+        if q is None:
+            return
+        if q.full():
+            try:
+                q.get_nowait()       # drop oldest to preserve real-time recency
+            except asyncio.QueueEmpty:
+                pass
+        try:
+            q.put_nowait(("frame", frame))
+        except asyncio.QueueFull:
+            pass
 
     async def push_packaging(self, task_id: str) -> None:
         """Signal that frame processing finished and ZIP packaging started."""
-        if task_id in self._queues:
-            await self._queues[task_id].put(("packaging", None))
+        self._put_sentinel(task_id, ("packaging", None))
 
     async def push_paused(self, task_id: str) -> None:
-        if task_id in self._queues:
-            await self._queues[task_id].put(("paused", None))
+        self._put_sentinel(task_id, ("paused", None))
 
     async def push_resumed(self, task_id: str) -> None:
-        if task_id in self._queues:
-            await self._queues[task_id].put(("resumed", None))
+        self._put_sentinel(task_id, ("resumed", None))
 
     async def push_cancelled(self, task_id: str) -> None:
-        if task_id in self._queues:
-            await self._queues[task_id].put(("cancelled", None))
+        self._put_sentinel(task_id, ("cancelled", None))
 
     async def push_early_terminated(self, task_id: str, reason: str) -> None:
         """Signal that the task was terminated early."""
-        if task_id in self._queues:
-            await self._queues[task_id].put(("early_terminated", reason))
+        self._put_sentinel(task_id, ("early_terminated", reason))
 
     async def push_done(self, task_id: str) -> None:
         """Signal that the task is fully complete.
@@ -116,15 +176,13 @@ class TaskManager:
         This lets a page refresh during a long-running task pick up the
         live frame stream again instead of being permanently silenced.
         """
-        if task_id in self._queues:
-            await self._queues[task_id].put(("done", None))
-            self._queues.pop(task_id, None)
+        self._put_sentinel(task_id, ("done", None))
+        self._queues.pop(task_id, None)
 
     async def push_error(self, task_id: str, error: str) -> None:
         """Signal a processing error. Pops the queue (see push_done)."""
-        if task_id in self._queues:
-            await self._queues[task_id].put(("error", error))
-            self._queues.pop(task_id, None)
+        self._put_sentinel(task_id, ("error", error))
+        self._queues.pop(task_id, None)
 
     # ── Control (cancel / pause / resume) ───────────────────────────────────
 
@@ -257,6 +315,7 @@ class TaskManager:
             processed_frames=state.processed_frames,
             zip_ready=True,
         )
+        self._evict_terminal_overflow()
 
     async def set_paused(self, task_id: str) -> bool:
         async with self._state_lock:
@@ -297,6 +356,7 @@ class TaskManager:
             processed_frames=state.processed_frames,
             progress=state.progress,
         )
+        self._evict_terminal_overflow()
 
     async def set_early_terminated(self, task_id: str, reason: str) -> None:
         async with self._state_lock:
@@ -317,6 +377,7 @@ class TaskManager:
             processed_frames=state.processed_frames,
             progress=state.progress,
         )
+        self._evict_terminal_overflow()
 
     async def set_failed(self, task_id: str, error: str) -> None:
         async with self._state_lock:
@@ -327,6 +388,7 @@ class TaskManager:
         await self._persist_update(
             task_id, status=TaskStatus.FAILED.value, error=error
         )
+        self._evict_terminal_overflow()
 
     @property
     def semaphore(self) -> asyncio.Semaphore:
@@ -357,8 +419,13 @@ class TaskManager:
                     )
                 )
                 await session.commit()
-        except Exception as exc:
+        except (SQLAlchemyError, OSError) as exc:
+            # Expected when the DB is down / flaky — best-effort archive, swallow.
             logger.warning(f"DB persist (create) failed for {state.task_id}: {exc}")
+        except Exception as exc:
+            # Unexpected (likely a code/schema bug) — surface loudly (R-7) so it
+            # isn't mistaken for a routine DB outage, but still don't crash.
+            logger.error(f"DB persist (create) UNEXPECTED error for {state.task_id}: {exc}")
 
     async def _persist_update(self, task_id: str, **fields: Any) -> None:
         if not fields:
@@ -380,8 +447,10 @@ class TaskManager:
                     .values(**fields)
                 )
                 await session.commit()
-        except Exception as exc:
+        except (SQLAlchemyError, OSError) as exc:
             logger.warning(f"DB persist (update) failed for {task_id}: {exc}")
+        except Exception as exc:
+            logger.error(f"DB persist (update) UNEXPECTED error for {task_id}: {exc}")
 
     def cleanup_queue(self, task_id: str) -> None:
         """Drop the stream queue for a task.
@@ -410,6 +479,42 @@ class TaskManager:
         self._cancel_flags.pop(task_id, None)
         self._pause_flags.pop(task_id, None)
         self._terminate_flags.pop(task_id, None)
+
+    def release_results(self, task_id: str) -> None:
+        """Drop the in-memory per-frame results for a terminal task (R-5).
+
+        The full results.json is already on disk (pipeline._package_zip) and the
+        lightweight status lives in the DB, so the frame list is dead weight once
+        a task is terminal — and on long videos it grows unbounded. Call this
+        only AFTER packaging has read state.results. Idempotent.
+        """
+        with self._sync_state_lock:
+            state = self._tasks.get(task_id)
+            if state is not None and state.results:
+                state.results = []
+
+    def _evict_terminal_overflow(self) -> None:
+        """Evict the oldest terminal tasks beyond MAX_RETAINED_TASKS (R-5).
+
+        Active tasks are never evicted. Evicted tasks stay downloadable and
+        queryable via the DB archive + on-disk ZIP (see download_results /
+        get_task fallbacks), so this only bounds memory, not durability.
+        Insertion order is preserved by dict ordering (oldest first).
+        """
+        cap = settings.MAX_RETAINED_TASKS
+        with self._sync_state_lock:
+            terminal_ids = [
+                tid for tid, st in self._tasks.items()
+                if st.status in _TERMINAL_STATUSES
+            ]
+            overflow = len(terminal_ids) - cap
+            to_evict = terminal_ids[:overflow] if overflow > 0 else []
+        # remove_task pops without the sync lock — do it outside to avoid
+        # re-entrant locking (threading.Lock is non-reentrant).
+        for tid in to_evict:
+            self.remove_task(tid)
+        if to_evict:
+            logger.debug(f"LRU evicted {len(to_evict)} terminal task(s) from memory")
 
 
 # Global singleton (replaced in tests via dependency injection)

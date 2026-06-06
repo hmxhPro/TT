@@ -10,6 +10,7 @@ source of truth for annotation content); the DB row mirrors status + box count.
 
 from __future__ import annotations
 
+import shutil
 import uuid
 from pathlib import Path
 from typing import List
@@ -27,6 +28,15 @@ from app.models.schemas import (
     AnnotationBox, AnnotationPayload, DatasetImageItem, DatasetImportResult,
 )
 
+# Cap PIL's decompression-bomb threshold explicitly (P-1): a crafted small file
+# can decode to a huge bitmap and exhaust RAM. PIL warns above its ~89 MP default
+# and raises above 2×; pin it so the guard is deterministic regardless of env.
+try:
+    from PIL import Image as _PILImage
+    _PILImage.MAX_IMAGE_PIXELS = 100_000_000  # ~100 megapixels
+except Exception:  # pragma: no cover - Pillow is always installed
+    pass
+
 router = APIRouter()
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -39,6 +49,24 @@ _MIME = {
 def _reject_unsafe(component: str) -> None:
     if "/" in component or "\\" in component or ".." in component:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "非法的标识符。")
+
+
+def _guard_upload_batch(files: list, verb: str = "上传") -> None:
+    """Reject an over-large batch up front and refuse when disk is low (P-1)."""
+    if len(files) > settings.MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"单次最多{verb} {settings.MAX_UPLOAD_FILES} 个文件。",
+        )
+    try:
+        free = shutil.disk_usage(settings.DATASETS_DIR).free
+    except OSError:
+        free = None
+    if free is not None and free < settings.MIN_FREE_DISK_BYTES:
+        raise HTTPException(
+            status.HTTP_507_INSUFFICIENT_STORAGE,
+            "磁盘空间不足，暂时无法接收上传，请联系管理员清理后重试。",
+        )
 
 
 def _raw_dir(category_id: str) -> Path:
@@ -136,6 +164,7 @@ async def upload_images(
 ) -> List[DatasetImageItem]:
     from PIL import Image  # local import; Pillow is a dependency
 
+    _guard_upload_batch(files, verb="上传")
     raw_dir = _raw_dir(category_id)
     raw_dir.mkdir(parents=True, exist_ok=True)
     created: List[DatasetImageRecord] = []
@@ -152,14 +181,25 @@ async def upload_images(
                 image_id = uuid.uuid4().hex
                 dest = raw_dir / f"{image_id}{suffix}"
                 total = 0
+                oversize = False
                 try:
                     async with aiofiles.open(dest, "wb") as out:
                         while chunk := await f.read(4 * 1024 * 1024):
                             total += len(chunk)
+                            if total > settings.MAX_IMAGE_BYTES:
+                                oversize = True
+                                break
                             await out.write(chunk)
                 except Exception as exc:
                     dest.unlink(missing_ok=True)
                     logger.warning(f"image write failed {f.filename}: {exc}")
+                    continue
+                if oversize:
+                    dest.unlink(missing_ok=True)
+                    logger.info(
+                        f"skip oversize image {f.filename} "
+                        f"(> {settings.MAX_IMAGE_BYTES // (1024 * 1024)} MB)"
+                    )
                     continue
 
                 w = h = 0
@@ -226,6 +266,7 @@ async def import_dataset(
     from PIL import Image  # local import; Pillow is a dependency
 
     _reject_unsafe(category_id)
+    _guard_upload_batch(files, verb="导入")
 
     # Fail fast before writing any files if the category is missing.
     try:
@@ -270,9 +311,23 @@ async def import_dataset(
         image_id = uuid.uuid4().hex
         dest = raw_dir / f"{image_id}{suffix}"
         try:
+            total = 0
+            oversize = False
             async with aiofiles.open(dest, "wb") as out:
                 while chunk := await f.read(4 * 1024 * 1024):
+                    total += len(chunk)
+                    if total > settings.MAX_IMAGE_BYTES:
+                        oversize = True
+                        break
                     await out.write(chunk)
+            if oversize:
+                dest.unlink(missing_ok=True)
+                logger.info(
+                    f"skip oversize image {rel} "
+                    f"(> {settings.MAX_IMAGE_BYTES // (1024 * 1024)} MB)"
+                )
+                skipped += 1
+                continue
             with Image.open(dest) as im:
                 w, h = im.size
         except Exception as exc:

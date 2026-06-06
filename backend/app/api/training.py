@@ -25,6 +25,16 @@ from app.services.training_manager import TrainingBusyError, training_manager
 router = APIRouter()
 
 
+def _job_item(rec) -> TrainingJobItem:
+    """Build a TrainingJobItem, surfacing val_is_train from the params JSON.
+
+    val_is_train is stored inside TrainingJobRecord.params (not its own column),
+    so it isn't auto-mapped by model_validate — lift it out explicitly (M-1)."""
+    item = TrainingJobItem.model_validate(rec)
+    item.val_is_train = bool((rec.params or {}).get("val_is_train"))
+    return item
+
+
 @router.post(
     "/categories/{category_id}/train",
     response_model=TrainResponse,
@@ -101,7 +111,7 @@ async def list_training_jobs(
     except Exception as exc:
         logger.warning(f"list_training_jobs failed: {exc}")
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "数据库不可用。") from exc
-    return [TrainingJobItem.model_validate(r) for r in rows]
+    return [_job_item(r) for r in rows]
 
 
 @router.get(
@@ -118,7 +128,7 @@ async def get_training_job(job_id: str) -> TrainingJobItem:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "数据库不可用。") from exc
     if rec is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "训练任务不存在。")
-    return TrainingJobItem.model_validate(rec)
+    return _job_item(rec)
 
 
 @router.post(

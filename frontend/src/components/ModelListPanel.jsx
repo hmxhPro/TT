@@ -107,7 +107,9 @@ export default function ModelListPanel({ reloadToken }) {
                     </div>
                     <div className="text-[11px] text-ink-400 mt-0.5 flex items-center gap-1">
                       <Clock size={11} /> {fmtTime(m.trained_finished_at || m.created_at)}
-                      {map50 && <span className="ml-2">mAP50 {map50}</span>}
+                      {m.val_is_train
+                        ? <span className="ml-2 text-red-600 font-medium">mAP 训练集自测</span>
+                        : (map50 && <span className="ml-2">mAP50 {map50}</span>)}
                     </div>
                   </div>
                   <button
@@ -135,8 +137,14 @@ export default function ModelListPanel({ reloadToken }) {
                       {m.class_names ? Object.values(m.class_names).join('、') : '—'}
                     </div>
                     <div className="text-ink-600">
-                      指标：mAP50 {map50 ?? '—'}
-                      {m.metric_map50_95 != null && ` · mAP50-95 ${Number(m.metric_map50_95).toFixed(3)}`}
+                      {m.val_is_train ? (
+                        <span className="text-red-600 font-medium">⚠ 指标在训练集自测，不可作为泛化依据</span>
+                      ) : (
+                        <>
+                          指标：mAP50 {map50 ?? '—'}
+                          {m.metric_map50_95 != null && ` · mAP50-95 ${Number(m.metric_map50_95).toFixed(3)}`}
+                        </>
+                      )}
                     </div>
                     <div className="text-ink-400 break-all">基础权重：{m.base_model || '—'}</div>
                   </div>

@@ -26,6 +26,7 @@ import csv
 import json
 import os
 import re
+import signal
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from sqlalchemy import func as sql_func, select, update
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
 from app.core.logging import logger
@@ -71,6 +73,10 @@ class TrainingManager:
         self._lock = asyncio.Lock()
         self._procs: dict[str, asyncio.subprocess.Process] = {}
         self._tasks: set[asyncio.Task] = set()
+        # Jobs the user explicitly cancelled — _monitor checks this before
+        # overwriting status with "failed" when the killed process exits non-zero
+        # (otherwise a cancel→SIGTERM→rc!=0 race relabels "cancelled" as "failed").
+        self._cancelled: set[str] = set()
 
     @property
     def active_job_id(self) -> Optional[str]:
@@ -166,6 +172,11 @@ class TrainingManager:
                 env=env,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                # Own session/process group so the whole training tree (the
+                # script + its dataloader worker children) can be reaped as a
+                # group on cancel/shutdown/crash instead of being orphaned and
+                # left holding the GPU (R-1/R-2/R-9). pgid == proc.pid here.
+                start_new_session=True,
             )
             self._procs[job_id] = proc
 
@@ -235,20 +246,34 @@ class TrainingManager:
                 if not Path(best_pt).exists():
                     raise FileNotFoundError(f"训练结束但未找到 best.pt: {best_pt}")
 
+                # M-2: a run with no real mAP (None / <= floor, e.g. an all-zero
+                # broken run) is marked needs_review and NOT registered as a
+                # selectable model — keep undeployable models out of production.
+                deployable = self._is_deployable(m50)
                 await self._persist_update(
-                    job_id, status="finished", progress=1.0,
-                    current_epoch=total_epochs, metrics=metrics,
+                    job_id, status="finished" if deployable else "needs_review",
+                    progress=1.0, current_epoch=total_epochs, metrics=metrics,
                     metric_map50=m50, metric_map50_95=m5095,
                     best_pt_path=best_pt, finished_at=sql_func.now(),
                 )
-                await self._insert_trained_model(
-                    job_id=job_id, category=category, version=version,
-                    best_pt=best_pt, base_model=ds.get("base_model"),
-                    dataset_yaml=ds["dataset_yaml"], num_images=ds["num_images"],
-                    metrics=metrics,
-                )
-                await self._set_category_status(category["id"], "trained")
-                logger.info(f"Training job {job_id} finished: best={best_pt} mAP50={m50}")
+                if deployable:
+                    await self._insert_trained_model(
+                        job_id=job_id, category=category, version=version,
+                        best_pt=best_pt, base_model=ds.get("base_model"),
+                        dataset_yaml=ds["dataset_yaml"], num_images=ds["num_images"],
+                        metrics=metrics, val_is_train=bool(ds.get("val_is_train")),
+                    )
+                    await self._set_category_status(category["id"], "trained")
+                    logger.info(f"Training job {job_id} finished: best={best_pt} mAP50={m50}")
+                else:
+                    logger.warning(
+                        f"Training job {job_id} mAP50={m50} <= deploy floor "
+                        f"{settings.MIN_DEPLOYABLE_MAP50}; marked needs_review, not registered."
+                    )
+            elif job_id in self._cancelled:
+                # Cancel already persisted status='cancelled'; the non-zero rc is
+                # just the SIGTERM/SIGKILL we sent — don't relabel it 'failed'.
+                logger.info(f"Training job {job_id} cancelled (rc={rc}).")
             else:
                 tail = "".join(stdout_buf)[-4000:]
                 await self._persist_update(
@@ -265,20 +290,75 @@ class TrainingManager:
         finally:
             self._procs.pop(job_id, None)
             self._active_job_id = None
+            self._cancelled.discard(job_id)
 
     async def cancel(self, job_id: str) -> bool:
-        """Terminate a running training subprocess (Phase 2 endpoint)."""
+        """Terminate a running training subprocess and its worker children.
+
+        Escalates SIGTERM → (grace) → SIGKILL across the whole process group so
+        ultralytics' dataloader children are not orphaned holding the GPU (R-9).
+        """
         proc = self._procs.get(job_id)
         if proc is None or proc.returncode is not None:
             return False
-        try:
-            proc.terminate()
-        except ProcessLookupError:
-            return False
+        self._cancelled.add(job_id)
+        await self._kill_group(proc, grace=10.0)
         await self._persist_update(
             job_id, status="cancelled", error="用户取消", finished_at=sql_func.now()
         )
         return True
+
+    @staticmethod
+    async def _kill_group(proc: asyncio.subprocess.Process, grace: float) -> None:
+        """SIGTERM the child's process group, wait up to `grace`, then SIGKILL.
+        No-op / swallows ProcessLookupError if it's already gone. Relies on
+        start_new_session=True so proc.pid is the group id."""
+        if proc.returncode is not None:
+            return
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=grace)
+        except asyncio.TimeoutError:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+    async def terminate_all(self, grace: float = 10.0) -> None:
+        """Kill every live training subprocess group. Called from the app
+        shutdown hook so a deploy/restart never orphans a training run (R-2)."""
+        live = [(jid, p) for jid, p in list(self._procs.items()) if p.returncode is None]
+        if not live:
+            return
+        logger.info(f"terminate_all: killing {len(live)} training subprocess group(s)")
+        # Mark these as intentionally stopped so _monitor's rc!=0 handler routes
+        # them to the 'cancelled' branch instead of relabeling them 'failed'
+        # (mirrors cancel()'s race-guard for the shutdown path).
+        for jid, _ in live:
+            self._cancelled.add(jid)
+        for _, proc in live:                     # phase 1: signal them all
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                continue
+        for _, proc in live:                     # phase 2: wait, then SIGKILL
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=grace)
+            except asyncio.TimeoutError:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+
+    @staticmethod
+    def _is_deployable(m50: Optional[float]) -> bool:
+        """A run is deployable only if it produced a real mAP50 above the floor.
+        None / <= floor (e.g. all-zero broken runs) stay out of the selectable
+        model list (M-2)."""
+        return m50 is not None and m50 > settings.MIN_DEPLOYABLE_MAP50
 
     # ── progress / metrics parsing ──────────────────────────────────────
 
@@ -376,8 +456,10 @@ class TrainingManager:
             async with AsyncSessionLocal() as session:
                 session.add(TrainingJobRecord(id=job_id, status="pending", **fields))
                 await session.commit()
-        except Exception as exc:
+        except (SQLAlchemyError, OSError) as exc:
             logger.warning(f"DB persist (job create) failed for {job_id}: {exc}")
+        except Exception as exc:
+            logger.error(f"DB persist (job create) UNEXPECTED error for {job_id}: {exc}")
 
     async def _persist_update(self, job_id: str, **fields: Any) -> None:
         if not fields:
@@ -392,16 +474,25 @@ class TrainingManager:
                     .values(**fields)
                 )
                 await session.commit()
-        except Exception as exc:
+        except (SQLAlchemyError, OSError) as exc:
             logger.warning(f"DB persist (job update) failed for {job_id}: {exc}")
+        except Exception as exc:
+            logger.error(f"DB persist (job update) UNEXPECTED error for {job_id}: {exc}")
 
     async def _insert_trained_model(
         self, job_id: str, category: dict, version: int, best_pt: str,
         base_model: Optional[str], dataset_yaml: str, num_images: int, metrics: dict,
+        val_is_train: bool = False,
     ) -> None:
         try:
             from app.db.session import AsyncSessionLocal
             from app.db.models import TrainingJobRecord, TrainedModelRecord
+            # Embed val_is_train into a COPY of metrics (M-1) so the trained-model
+            # row carries the "metrics measured on the training set" flag without
+            # a schema migration — and without mutating the job's own metrics dict
+            # (already persisted). _find_map_columns / the UI only read mAP keys,
+            # so the extra boolean key is ignored by metric parsing.
+            model_metrics = {**(metrics or {}), "val_is_train": bool(val_is_train)}
             async with AsyncSessionLocal() as session:
                 job = await session.get(TrainingJobRecord, job_id)
                 session.add(TrainedModelRecord(
@@ -415,13 +506,15 @@ class TrainingManager:
                     class_names={"0": category["name"]},  # Phase 1 single-class
                     dataset_yaml=dataset_yaml,
                     num_images=num_images,
-                    metrics=metrics,
+                    metrics=model_metrics,
                     trained_started_at=getattr(job, "started_at", None),
                     trained_finished_at=datetime.now(timezone.utc),
                 ))
                 await session.commit()
-        except Exception as exc:
+        except (SQLAlchemyError, OSError) as exc:
             logger.warning(f"DB insert trained_model failed for {job_id}: {exc}")
+        except Exception as exc:
+            logger.error(f"DB insert trained_model UNEXPECTED error for {job_id}: {exc}")
 
     async def _set_category_status(self, category_id: str, status: str) -> None:
         try:

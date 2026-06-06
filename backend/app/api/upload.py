@@ -6,6 +6,7 @@ POST /api/upload  – Accept a video file and return its metadata.
 
 from __future__ import annotations
 
+import shutil
 import uuid
 from pathlib import Path
 
@@ -48,12 +49,33 @@ async def upload_video(
     video_id = str(uuid.uuid4())
     dest_path = settings.UPLOAD_DIR / f"{video_id}{suffix}"
 
-    # ── Stream to disk (no size limit) ────────────────────────────────────
+    # ── Disk water-mark: refuse new uploads when free space is low (P-1) ──
+    try:
+        free = shutil.disk_usage(settings.UPLOAD_DIR).free
+    except OSError:
+        free = None
+    if free is not None and free < settings.MIN_FREE_DISK_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
+            detail="磁盘空间不足，暂时无法接收上传，请联系管理员清理后重试。",
+        )
+
+    # ── Stream to disk with a hard size cap (P-1) ─────────────────────────
+    # An unbounded write lets one upload fill the disk. Accumulate bytes and
+    # abort + unlink the moment the cap is exceeded. The HTTPException is caught
+    # by the `except HTTPException` arm below (ordered before the generic
+    # handler) so the partial file is removed and 413 is returned, not 500.
+    max_bytes = settings.MAX_UPLOAD_BYTES
     total_bytes = 0
     try:
         async with aiofiles.open(dest_path, "wb") as out_file:
             while chunk := await file.read(4 * 1024 * 1024):  # 4 MB chunks
                 total_bytes += len(chunk)
+                if total_bytes > max_bytes:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"视频文件超过上限 {max_bytes // (1024 * 1024)} MB。",
+                    )
                 await out_file.write(chunk)
     except HTTPException:
         dest_path.unlink(missing_ok=True)

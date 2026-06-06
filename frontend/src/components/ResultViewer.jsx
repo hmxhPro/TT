@@ -26,7 +26,7 @@ function FrameThumbnail({ frame, onClick, idx }) {
     <button
       type="button"
       onClick={() => onClick(idx)}
-      className="frame-card-enter group relative rounded-lg overflow-hidden border border-ink-200 hover:border-brand-400 bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200"
+      className="frame-card-enter group relative rounded-lg overflow-hidden border border-ink-200 hover:border-brand-400 bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200"
       title="点击放大"
     >
       <img
@@ -50,7 +50,7 @@ function FrameThumbnail({ frame, onClick, idx }) {
 
 function DetectionBadge({ det }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brand-200 bg-brand-50 text-ink-800 text-sm">
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brand-200 bg-brand-50 text-brand-900 text-sm">
       <Target size={12} className="flex-shrink-0" />
       <span className="truncate">{det.label}</span>
       <span className="ml-auto text-xs">{(det.score * 100).toFixed(0)}%</span>
@@ -104,7 +104,7 @@ export default function ResultViewer({
     <div className="flex flex-col gap-3">
       {/* ── Live view ───────────────────────────────────────────────────── */}
       {latestFrame && liveSrc && (
-        <div className="rounded-xl overflow-hidden border border-ink-200 bg-white">
+        <div className="rounded-xl overflow-hidden border border-ink-200 bg-surface">
           <div className="flex items-center justify-between px-4 py-2 bg-ink-50 border-b border-ink-200">
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5 text-brand-600 font-mono">
@@ -132,7 +132,7 @@ export default function ResultViewer({
                 <button
                   type="button"
                   onClick={onOpenLiveFrame}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-ink-500 hover:text-brand-600 hover:bg-white text-xs"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-ink-500 hover:text-brand-600 hover:bg-surface text-xs"
                   title="放大查看"
                 >
                   <Maximize2 size={12} />
@@ -145,7 +145,7 @@ export default function ResultViewer({
           <button
             type="button"
             onClick={onOpenLiveFrame}
-            className="block w-full cursor-zoom-in bg-ink-900/90"
+            className="block w-full cursor-zoom-in bg-slate-900/90"
             title="点击放大"
           >
             <img
@@ -156,7 +156,7 @@ export default function ResultViewer({
           </button>
 
           {liveDetCount > 0 && (
-            <div className="px-4 py-3 flex flex-wrap gap-2 bg-white">
+            <div className="px-4 py-3 flex flex-wrap gap-2 bg-surface">
               {latestDets.map((det, i) => (
                 <DetectionBadge key={i} det={det} />
               ))}

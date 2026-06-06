@@ -14,6 +14,7 @@ const JOB_META = {
   pending: { label: '排队中', cls: 'text-brand-600', icon: Loader2, spin: true },
   running: { label: '训练中', cls: 'text-brand-600', icon: Loader2, spin: true },
   finished: { label: '已完成', cls: 'text-emerald-600', icon: CheckCircle2 },
+  needs_review: { label: '指标过低·需复核', cls: 'text-amber-600', icon: XCircle },
   failed: { label: '失败', cls: 'text-red-600', icon: XCircle },
   cancelled: { label: '已取消', cls: 'text-ink-500', icon: Ban },
 }
@@ -124,6 +125,7 @@ export default function TrainPanel({ category, onTrained }) {
                   className={[
                     'h-full rounded-full transition-all duration-500',
                     job.status === 'finished' ? 'bg-emerald-500'
+                      : job.status === 'needs_review' ? 'bg-amber-500'
                       : job.status === 'failed' || job.status === 'cancelled' ? 'bg-ink-400'
                       : 'bg-brand-500 progress-glow',
                   ].join(' ')}
@@ -131,9 +133,14 @@ export default function TrainPanel({ category, onTrained }) {
                 />
               </div>
               {(job.metric_map50 != null || job.metric_map50_95 != null) && (
-                <div className="text-xs text-ink-500 flex gap-4">
-                  {job.metric_map50 != null && <span>mAP50: <span className="font-mono text-ink-800">{job.metric_map50.toFixed(3)}</span></span>}
-                  {job.metric_map50_95 != null && <span>mAP50-95: <span className="font-mono text-ink-800">{job.metric_map50_95.toFixed(3)}</span></span>}
+                <div className="text-xs flex flex-col gap-0.5">
+                  <div className="flex gap-4 text-ink-500">
+                    {job.metric_map50 != null && <span>mAP50: <span className={`font-mono ${job.val_is_train ? 'text-ink-400' : 'text-ink-800'}`}>{job.metric_map50.toFixed(3)}</span></span>}
+                    {job.metric_map50_95 != null && <span>mAP50-95: <span className={`font-mono ${job.val_is_train ? 'text-ink-400' : 'text-ink-800'}`}>{job.metric_map50_95.toFixed(3)}</span></span>}
+                  </div>
+                  {job.val_is_train && (
+                    <span className="text-red-600 font-medium">⚠ 指标在训练集自测（标注样本过少），不可作为泛化依据</span>
+                  )}
                 </div>
               )}
               {active && (

@@ -28,6 +28,10 @@ from app.models.schemas import ImageDetectResponse, ImageDetectResultItem
 
 router = APIRouter()
 
+# Decoded-pixel guard for the cv2 path (P-1). MAX_IMAGE_BYTES bounds the encoded
+# upload, but a small file can still decode to a huge bitmap; reject those.
+_MAX_DECODED_PIXELS = 100_000_000  # ~100 megapixels
+
 
 def _reject_unsafe(component: str) -> None:
     if "/" in component or "\\" in component or ".." in component:
@@ -61,6 +65,12 @@ async def image_detect(
         )
     if conf is not None:
         conf = max(0.0, min(1.0, float(conf)))
+
+    if len(files) > settings.MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"单次最多检测 {settings.MAX_UPLOAD_FILES} 张图片。",
+        )
 
     # Resolve detection mode.
     weights_path: Optional[str] = None
@@ -96,12 +106,21 @@ async def image_detect(
         raw = await f.read()
         if not raw:
             continue
+        if len(raw) > settings.MAX_IMAGE_BYTES:
+            logger.info(
+                f"image_detect: skipping oversize file {f.filename} "
+                f"(> {settings.MAX_IMAGE_BYTES // (1024 * 1024)} MB)"
+            )
+            continue
         arr = np.frombuffer(raw, dtype=np.uint8)
         image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
         if image is None:
             logger.info(f"image_detect: skipping undecodable file {f.filename}")
             continue
         h, w = image.shape[:2]
+        if h * w > _MAX_DECODED_PIXELS:
+            logger.info(f"image_detect: skipping oversize-decode {f.filename} ({w}x{h})")
+            continue
 
         try:
             if mode == "model":

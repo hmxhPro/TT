@@ -40,6 +40,23 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = Path("./uploads")
     RESULTS_DIR: Path = Path("./results")
 
+    # ── Resource guards (P-1 / R-4 / R-5) ────────────────────────────────────
+    # Upload limits: an unbounded upload + no cleanup fills the disk (P-1). These
+    # cap per-file bytes, batch file count, and refuse new uploads below a disk
+    # water mark. Tune for the deployment's disk; the in-loop byte cap is the
+    # real guard (disk_usage pre-check is a TOCTOU estimate).
+    MAX_UPLOAD_BYTES: int = 2 * 1024 ** 3        # video single-file cap (2 GiB)
+    MAX_IMAGE_BYTES: int = 50 * 1024 ** 2        # image single-file cap (50 MiB)
+    MAX_UPLOAD_FILES: int = 200                  # per-request file-count cap
+    MIN_FREE_DISK_BYTES: int = 2 * 1024 ** 3     # refuse uploads below this free space
+    # SSE per-task frame queue cap — a disconnected client otherwise lets the
+    # queue accumulate full base64 frames until OOM (R-4). Oldest frame is
+    # dropped when full; terminal sentinels are never dropped.
+    TASK_QUEUE_MAXSIZE: int = 120
+    # Max terminal tasks kept in memory; oldest are evicted (their results are
+    # on disk + in the DB archive) to bound long-run memory growth (R-5).
+    MAX_RETAINED_TASKS: int = Field(default=50, ge=1)
+
     # ── Detection Model ──────────────────────────────────────────────────────
     DETECTION_MODEL: Literal["florence2", "grounding_dino", "yolo_world"] = "grounding_dino"
     DEVICE: str = "cuda:0"
@@ -175,6 +192,14 @@ class Settings(BaseSettings):
     # set mirrors train (Ultralytics needs a non-empty val set to compute mAP).
     TRAIN_VAL_SPLIT: float = Field(default=0.8, ge=0.1, le=0.95)
     MIN_VAL_IMAGES: int = Field(default=5, ge=1)
+    # Fixed seed for the train/val split so the same annotations reproduce the
+    # same split (and thus the same best.pt / mAP) across reruns (M-3).
+    TRAIN_SPLIT_SEED: int = 42
+    # A finished run whose mAP50 is None or <= this floor is marked
+    # `needs_review` and NOT registered as a selectable model — keeps 0-metric /
+    # broken models out of production detection (M-2). Raise to enforce a real
+    # quality bar; 0.0 only excludes all-zero / metric-less runs.
+    MIN_DEPLOYABLE_MAP50: float = Field(default=0.0, ge=0.0, le=1.0)
     TRAIN_DEFAULT_EPOCHS: int = Field(default=100, ge=1)
     TRAIN_DEFAULT_IMGSZ: int = Field(default=640, ge=64)
     TRAIN_DEFAULT_BATCH: int = Field(default=16)

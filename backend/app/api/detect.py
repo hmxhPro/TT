@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.core.config import settings
+from app.core import state as app_state
 from app.core.logging import logger
 from app.db.models import TrainedModelRecord
 from app.db.session import AsyncSessionLocal
@@ -117,6 +118,15 @@ async def start_detection(body: DetectRequest) -> DetectResponse:
         )
     else:
         # ── Natural-language mode (existing open-vocabulary behavior) ──────
+        # Open-vocabulary detection needs the preloaded singleton detector. If
+        # preload failed (missing weights / GPU OOM), fail fast with 503 instead
+        # of triggering an expensive failing reload on every request (R-8). The
+        # trained-model branch above is independent (loads its own weights).
+        if not app_state.model_ready:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="检测模型尚未就绪（加载失败或加载中），请稍后重试，或查看 /readyz。",
+            )
         normalized = normalize_prompt(prompt)
         dino_prompt = normalized.dino_prompt
         vlm_query = normalized.vlm_query
@@ -414,22 +424,47 @@ async def download_results(task_id: str):
     Download a ZIP file containing all annotated frames,
     results.json, and results.csv for the specified task.
 
-    Only available once the task status is `finished`.
+    Only available once the task status is `finished` (or `early_terminated`).
+    Falls back to the PostgreSQL archive + on-disk ZIP when the task is no
+    longer in memory — e.g. after a backend restart, or once the in-memory
+    LRU has evicted an old terminal task (A-1 / R-5). The ZIP only ever lives
+    on disk, so download depends on disk + DB, not on live process state.
     """
-    state = task_manager.get_task(task_id)
-    if state is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Task '{task_id}' not found.",
-        )
+    # Path-traversal guard (the task_id indexes a directory below).
+    if "/" in task_id or "\\" in task_id or ".." in task_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid task_id.")
 
-    if state.status != TaskStatus.FINISHED:
-        # Allow download for early terminated tasks as well
-        if state.status != TaskStatus.EARLY_TERMINATED:
+    _TERMINAL = {TaskStatus.FINISHED, TaskStatus.EARLY_TERMINATED}
+
+    state = task_manager.get_task(task_id)
+    if state is not None:
+        if state.status not in _TERMINAL:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Task is not finished yet (status={state.status}). "
                        "Wait for 'finished' or 'early_terminated' before downloading.",
+            )
+    else:
+        # In-memory miss: consult the DB archive so a restarted/evicted task
+        # can still be downloaded from its on-disk ZIP.
+        try:
+            from app.db.models import TaskRecord
+
+            async with AsyncSessionLocal() as session:
+                row = await session.get(TaskRecord, task_id)
+        except Exception as exc:
+            logger.warning(f"download DB lookup failed for {task_id}: {exc}")
+            row = None
+
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Task '{task_id}' not found.",
+            )
+        if row.status not in ("finished", "early_terminated"):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Task is not finished yet (status={row.status}).",
             )
 
     zip_path = settings.RESULTS_DIR / task_id / "results.zip"

@@ -98,6 +98,7 @@ async def run_detection_pipeline(
         logger.error(f"[{task_id}] Failed to read video: {exc}")
         await task_manager.set_failed(task_id, str(exc))
         await task_manager.push_error(task_id, str(exc))
+        task_manager.release_results(task_id)
         return
 
     await task_manager.set_running(task_id, info["total_frames"])
@@ -135,6 +136,7 @@ async def run_detection_pipeline(
             await task_manager.set_failed(task_id, str(exc))
             await task_manager.push_error(task_id, str(exc))
             task_manager.cleanup_flags(task_id)
+            task_manager.release_results(task_id)
             return
 
     # ── Cancel path: skip ZIP, emit cancelled, close stream ──────────────
@@ -143,6 +145,7 @@ async def run_detection_pipeline(
         await task_manager.push_cancelled(task_id)
         await task_manager.push_done(task_id)
         task_manager.cleanup_flags(task_id)
+        task_manager.release_results(task_id)
         logger.info(f"[{task_id}] Pipeline cancelled.")
         return
 
@@ -166,6 +169,7 @@ async def run_detection_pipeline(
         await task_manager.push_early_terminated(task_id, termination_reason)
         await task_manager.push_done(task_id)
         task_manager.cleanup_flags(task_id)
+        task_manager.release_results(task_id)
         logger.info(f"[{task_id}] Pipeline manually terminated and packaged.")
         return
 
@@ -187,6 +191,7 @@ async def run_detection_pipeline(
 
     await task_manager.push_done(task_id)
     task_manager.cleanup_flags(task_id)
+    task_manager.release_results(task_id)
     logger.info(f"[{task_id}] Pipeline complete.")
 
 

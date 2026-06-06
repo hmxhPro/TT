@@ -161,3 +161,23 @@ class TrainedModelRecord(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )
+
+
+class OperationLog(Base):
+    """Lightweight audit trail for destructive/administrative actions (R-10).
+
+    Brand-new table — created automatically by create_all (init_db) with no
+    migration. Records what was deleted/affected and when so an accidental
+    history wipe can be reconstructed/explained. No auth yet, so there is no
+    actor column; add one when authentication lands.
+    """
+
+    __tablename__ = "operation_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    detail: Mapped[Optional[str]] = mapped_column(Text)   # human/JSON summary
+    affected_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )

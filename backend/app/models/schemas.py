@@ -300,6 +300,10 @@ class TrainingJobItem(BaseModel):
     metrics: Optional[dict] = None
     best_pt_path: Optional[str] = None
     error: Optional[str] = None
+    # True when the val set mirrored train (too few images for a real holdout) —
+    # the reported mAP is then optimistic and must be shown with a warning, not
+    # as a generalization metric (M-1). Sourced from the job's params JSON.
+    val_is_train: bool = False
     created_at: datetime
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -321,6 +325,9 @@ class TrainedModelItem(BaseModel):
     dataset_yaml: Optional[str] = None
     num_images: int = 0
     metrics: Optional[dict] = None
+    # Mirrors TrainingJobItem.val_is_train — the model's reported mAP was
+    # measured on its own training set (no real holdout); the UI flags it (M-1).
+    val_is_train: bool = False
     trained_started_at: Optional[datetime] = None
     trained_finished_at: Optional[datetime] = None
     created_at: datetime

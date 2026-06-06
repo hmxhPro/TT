@@ -276,7 +276,7 @@ export default function KonvaAnnotator({ category, onDataChanged }) {
 
   // ── actions ───────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!current || !category) return
+    if (!current || !category) return true   // nothing to save → don't block nav
     setSaving(true)
     setError(null)
     try {
@@ -291,8 +291,12 @@ export default function KonvaAnnotator({ category, onDataChanged }) {
       )
       dirtyRef.current = false
       onDataChanged?.()
+      return true
     } catch (e) {
-      setError(e?.message || '保存失败')
+      // F-3: surface the failure AND signal it to the caller so navigation is
+      // blocked — silently swallowing this lost unsaved annotations on page flip.
+      setError(`保存失败：${e?.message || '未知错误'}，未翻页`)
+      return false
     } finally {
       setSaving(false)
     }
@@ -300,7 +304,10 @@ export default function KonvaAnnotator({ category, onDataChanged }) {
 
   const goto = async (newIdx) => {
     if (newIdx < 0 || newIdx >= images.length || newIdx === idx) return
-    if (dirtyRef.current) await handleSave()
+    if (dirtyRef.current) {
+      const ok = await handleSave()
+      if (!ok) return   // save failed → stay on this image, keep unsaved boxes
+    }
     setIdx(newIdx)
   }
 

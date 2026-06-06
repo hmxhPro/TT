@@ -2,11 +2,21 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/科大logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>视频目标检测 Agent</title>
-    <script type="module" crossorigin src="/assets/index-BeaYnVJu.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BgEXMTUl.css">
+    <title>视频检测控制台</title>
+    <script>
+      // Apply the saved theme before React mounts to avoid a flash. Defaults to light.
+      (function () {
+        try {
+          if (localStorage.getItem('sod_theme') === 'dark') {
+            document.documentElement.classList.add('dark')
+          }
+        } catch (e) {}
+      })()
+    </script>
+    <script type="module" crossorigin src="/assets/index-uvbFwYFg.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D6pOZn5T.css">
   </head>
   <body>
     <div id="root"></div>

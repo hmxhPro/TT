@@ -2,22 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Global ──────────────────────────────────────────────────────────────── */
+/* ── Theme tokens ─────────────────────────────────────────────────────────── */
+/* Neutral scale + surface are CSS variables so the whole UI flips between light
+   and dark by toggling the `.dark` class on <html>. Light values are identical
+   to the original slate palette, so light mode is unchanged. */
 :root {
-  --color-accent:        #f97316;  /* orange-500 */
-  --color-accent-soft:   #fed7aa;  /* orange-200 */
-  --color-accent-dark:   #c2410c;  /* orange-700 */
-  --color-bg:            #ffffff;
-  --color-bg-muted:      #f8fafc;  /* slate-50 */
-  --color-card:          #ffffff;
-  --color-border:        #e2e8f0;  /* slate-200 */
-  --color-text:          #0f172a;  /* slate-900 */
-  --color-text-muted:    #64748b;  /* slate-500 */
+  color-scheme: light;
+
+  --color-accent:        #f97316;  /* orange-500 — used by drop-zone, etc. */
+  --color-accent-soft:   #fed7aa;
+  --color-accent-dark:   #c2410c;
+
+  --ink-50:  248 250 252;
+  --ink-100: 241 245 249;
+  --ink-200: 226 232 240;
+  --ink-300: 203 213 225;
+  --ink-400: 148 163 184;
+  --ink-500: 100 116 139;
+  --ink-600: 71 85 105;
+  --ink-700: 51 65 85;
+  --ink-800: 30 41 59;
+  --ink-900: 15 23 42;
+
+  --surface: 255 255 255;          /* cards / inputs / panels */
 }
 
+.dark {
+  color-scheme: dark;
+
+  /* Neutral scale inverted: light backgrounds become dark, dark text becomes
+     light, so existing ink-* utilities read correctly in both themes. */
+  --ink-50:  15 23 42;
+  --ink-100: 30 41 59;
+  --ink-200: 51 65 85;
+  --ink-300: 71 85 105;
+  --ink-400: 100 116 139;
+  --ink-500: 148 163 184;
+  --ink-600: 203 213 225;
+  --ink-700: 226 232 240;
+  --ink-800: 241 245 249;
+  --ink-900: 248 250 252;
+
+  --surface: 30 41 59;             /* slate-800 — one step above the canvas */
+}
+
+/* ── Global ──────────────────────────────────────────────────────────────── */
 html, body {
-  background-color: var(--color-bg-muted);
-  color: var(--color-text);
+  background-color: rgb(var(--ink-50));
+  color: rgb(var(--ink-900));
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -30,10 +62,10 @@ html, body {
 }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: rgb(var(--ink-200));
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--ink-300)); }
 
 /* ── Frame card fade-in ───────────────────────────────────────────────────── */
 @keyframes slide-in {
@@ -64,8 +96,8 @@ html, body {
 
 /* ── Utilities ──────────────────────────────────────────────────────────── */
 .card {
-  background-color: var(--color-card);
-  border: 1px solid var(--color-border);
+  background-color: rgb(var(--surface));
+  border: 1px solid rgb(var(--ink-200));
   border-radius: 16px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
@@ -83,8 +115,41 @@ html, body {
   gap: 6px;
   padding: 4px 12px;
   border-radius: 999px;
-  background: #f1f5f9;
-  color: #475569;
+  background: rgb(var(--ink-100));
+  color: rgb(var(--ink-600));
   font-size: 12px;
   font-weight: 500;
+}
+
+/* ── Sidebar nav items ───────────────────────────────────────────────────── */
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgb(var(--ink-500));
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.nav-item:hover {
+  background: rgb(var(--ink-100));
+  color: rgb(var(--ink-900));
+}
+.nav-item-active {
+  background: rgba(249, 115, 22, 0.12);   /* brand-500 tint — works on both themes */
+  color: rgb(var(--ink-900));
+}
+.nav-item-active::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: #f97316;       /* brand-500 */
 }

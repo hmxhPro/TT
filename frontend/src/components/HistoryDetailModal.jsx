@@ -95,7 +95,7 @@ export default function HistoryDetailModal({ taskId, onClose }) {
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden"
+        className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ───────────────────────────────────────────────── */}

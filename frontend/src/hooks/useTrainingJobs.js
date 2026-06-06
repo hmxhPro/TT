@@ -11,7 +11,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { startTraining as apiStartTraining, getTrainingJob } from '../services/api'
 
 const LS_KEY = 'sod_active_training_job_v1'
-const TERMINAL = ['finished', 'failed', 'cancelled']
+// `needs_review` is terminal too (M-2: a finished run whose mAP was too low to
+// register as a model). Omitting it here made the poller loop forever.
+const TERMINAL = ['finished', 'needs_review', 'failed', 'cancelled']
 
 export function useTrainingJobs(onFinished) {
   const [job, setJob] = useState(null)
@@ -39,7 +41,10 @@ export function useTrainingJobs(onFinished) {
         if (TERMINAL.includes(j.status)) {
           localStorage.removeItem(LS_KEY)
           clearTimer()
-          if (j.status === 'finished') onFinishedRef.current?.(j)
+          // Refresh the model list / category on any successful completion,
+          // including needs_review (the category status / job history changed
+          // even though no deployable model was registered).
+          if (j.status === 'finished' || j.status === 'needs_review') onFinishedRef.current?.(j)
           return
         }
         timerRef.current = setTimeout(() => pollOnce(jobId), 3000)

@@ -14,4 +14,6 @@ export AV_LOG_FORCE_NOCOLOR=1
 
 # Start the backend server
 cd "$(dirname "$0")"
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
+# --timeout-graceful-shutdown: give the lifespan shutdown hook time to drain
+# in-flight detection tasks and reap training subprocess groups (R-2).
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --timeout-graceful-shutdown 30

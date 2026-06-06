@@ -103,22 +103,22 @@ export default function FramePreview({ frames, index, onClose, onChangeIndex }) 
 
       {/* Content */}
       <div
-        className="relative max-w-6xl w-full max-h-[92vh] flex flex-col bg-ink-900 rounded-2xl overflow-hidden shadow-2xl"
+        className="relative max-w-6xl w-full max-h-[92vh] flex flex-col bg-slate-900 rounded-2xl overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-5 py-3 bg-ink-800/80 border-b border-ink-700 text-sm">
+        <div className="flex items-center justify-between px-5 py-3 bg-slate-800/80 border-b border-slate-700 text-sm">
           <div className="flex items-center gap-4 text-white/90">
             <span className="flex items-center gap-1.5 text-brand-300 font-mono">
               <Clock size={13} /> {frame.timestamp}
             </span>
-            <span className="flex items-center gap-1.5 text-ink-300">
+            <span className="flex items-center gap-1.5 text-slate-300">
               <Hash size={13} /> 帧 {frame.frame_id}
             </span>
-            <span className="flex items-center gap-1.5 text-ink-300">
+            <span className="flex items-center gap-1.5 text-slate-300">
               <Target size={13} /> {detections.length} 个目标
             </span>
-            <span className="text-ink-400 text-xs hidden sm:inline">
+            <span className="text-slate-400 text-xs hidden sm:inline">
               {index + 1} / {total}
             </span>
           </div>
@@ -146,13 +146,13 @@ export default function FramePreview({ frames, index, onClose, onChangeIndex }) 
               className="max-w-full max-h-[72vh] object-contain"
             />
           ) : (
-            <div className="text-ink-400 text-sm p-8">无法加载图像</div>
+            <div className="text-slate-400 text-sm p-8">无法加载图像</div>
           )}
         </div>
 
         {/* Detection list */}
         {detections.length > 0 && (
-          <div className="px-5 py-3 bg-ink-800/60 border-t border-ink-700 flex flex-wrap gap-2 max-h-36 overflow-y-auto">
+          <div className="px-5 py-3 bg-slate-800/60 border-t border-slate-700 flex flex-wrap gap-2 max-h-36 overflow-y-auto">
             {detections.map((d, i) => (
               <span
                 key={i}
@@ -160,7 +160,7 @@ export default function FramePreview({ frames, index, onClose, onChangeIndex }) 
               >
                 <Target size={11} className="text-brand-300" />
                 <span className="truncate max-w-[12rem]">{d.label}</span>
-                <span className="text-ink-400">{(d.score * 100).toFixed(0)}%</span>
+                <span className="text-slate-400">{(d.score * 100).toFixed(0)}%</span>
                 {d.track_id != null && (
                   <span className="text-brand-300 font-mono">#{d.track_id}</span>
                 )}

@@ -34,7 +34,7 @@ export default function PromptInput({ value, onChange, disabled }) {
         placeholder="用逗号分隔目标名词，例如：钓鱼台,菜地,水塘"
         className={[
           'w-full rounded-xl px-4 py-3 text-ink-800 placeholder-ink-400',
-          'bg-white border border-ink-200',
+          'bg-surface border border-ink-200',
           'focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100',
           'resize-none transition-colors duration-200',
           disabled ? 'opacity-60 cursor-not-allowed' : '',
@@ -56,7 +56,7 @@ export default function PromptInput({ value, onChange, disabled }) {
             disabled={disabled}
             type="button"
             className={[
-              'text-xs px-3 py-1 rounded-full border border-ink-200 bg-white',
+              'text-xs px-3 py-1 rounded-full border border-ink-200 bg-surface',
               'text-ink-600 hover:text-brand-600 hover:border-brand-300 hover:bg-brand-50',
               'transition-colors duration-150',
               disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',

@@ -23,6 +23,14 @@ from app.models.schemas import TrainedModelItem
 router = APIRouter()
 
 
+def _model_item(rec) -> TrainedModelItem:
+    """Build a TrainedModelItem, surfacing val_is_train embedded in the metrics
+    JSON (no dedicated column — see training_manager._insert_trained_model). M-1."""
+    item = TrainedModelItem.model_validate(rec)
+    item.val_is_train = bool((rec.metrics or {}).get("val_is_train"))
+    return item
+
+
 @router.get(
     "/models",
     response_model=List[TrainedModelItem],
@@ -43,7 +51,7 @@ async def list_models(
     except Exception as exc:
         logger.warning(f"list_models failed: {exc}")
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "数据库不可用。") from exc
-    return [TrainedModelItem.model_validate(r) for r in rows]
+    return [_model_item(r) for r in rows]
 
 
 @router.get(
@@ -60,7 +68,7 @@ async def get_model(model_id: str) -> TrainedModelItem:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "数据库不可用。") from exc
     if rec is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "模型不存在。")
-    return TrainedModelItem.model_validate(rec)
+    return _model_item(rec)
 
 
 @router.delete(

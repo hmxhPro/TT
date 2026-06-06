@@ -20,6 +20,7 @@ Phase 1 is single-class per category: every box is class 0 and
 
 from __future__ import annotations
 
+import json
 import random
 import shutil
 from pathlib import Path
@@ -106,7 +107,11 @@ def finalize(
         (root / sub).mkdir(parents=True, exist_ok=True)
 
     items = list(images)
-    random.shuffle(items)
+    # Seeded shuffle so the same annotations reproduce the same train/val split
+    # (and thus the same best.pt / mAP) across reruns (M-3). A local Random
+    # instance avoids perturbing global RNG state in the worker thread.
+    rng = random.Random(settings.TRAIN_SPLIT_SEED)
+    rng.shuffle(items)
     n = len(items)
     n_train = max(1, int(round(n * val_split)))
     train_items = items[:n_train]
@@ -149,6 +154,23 @@ def finalize(
     }
     dataset_yaml.write_text(
         yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+
+    # Freeze the exact split (image ids + seed) alongside the dataset so each
+    # best.pt is traceable to the data partition it was trained on (M-3).
+    (root / "split.json").write_text(
+        json.dumps(
+            {
+                "seed": settings.TRAIN_SPLIT_SEED,
+                "val_split": val_split,
+                "val_is_train": val_is_train,
+                "train": [it["id"] for it in train_items],
+                "val": [it["id"] for it in val_items],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
 
     logger.info(

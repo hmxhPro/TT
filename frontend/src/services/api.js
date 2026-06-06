@@ -177,11 +177,12 @@ export async function deleteHistoryTask(taskId) {
 }
 
 /**
- * Wipe ALL history: every DB row, every result dir, every upload.
- * 409 if any task is still active in memory.
+ * Wipe ALL history: every DB row + each task's result dir + upload.
+ * Requires the confirm token (server returns 409 without it). 409 also if any
+ * task is still active in memory.
  */
 export async function deleteAllHistory() {
-  await api.delete(`/api/tasks`)
+  await api.delete(`/api/tasks?confirm=DELETE_ALL`)
 }
 
 // ════════════════════════════════════════════════════════════════════════════
