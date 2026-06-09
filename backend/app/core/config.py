@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = False
 
+    # ── Logging (O-5 / O-6) ───────────────────────────────────────────────────
+    # LOG_DIR is resolved to an absolute path at logging setup, so the file sink
+    # no longer depends on the process CWD (O-6). LOG_LEVEL controls the console
+    # sink; the file sink always keeps DEBUG for post-mortem detail.
+    LOG_DIR: Path = Path("./logs")
+    LOG_LEVEL: str = "INFO"
+
     # ── Storage ─────────────────────────────────────────────────────────────
     UPLOAD_DIR: Path = Path("./uploads")
     RESULTS_DIR: Path = Path("./results")
@@ -58,7 +65,7 @@ class Settings(BaseSettings):
     MAX_RETAINED_TASKS: int = Field(default=50, ge=1)
 
     # ── Detection Model ──────────────────────────────────────────────────────
-    DETECTION_MODEL: Literal["florence2", "grounding_dino", "yolo_world"] = "grounding_dino"
+    DETECTION_MODEL: Literal["florence2", "grounding_dino", "yoloe"] = "yoloe"
     DEVICE: str = "cuda:0"
 
     # Florence-2
@@ -70,8 +77,8 @@ class Settings(BaseSettings):
         "./models/groundingdino/weights/groundingdino_swint_ogc.pth"
     )
 
-    # YOLO-World
-    YOLO_WORLD_MODEL: str = "yolo11l-world.pt"  # yolo11l-world.pt, yolo11m-world.pt, yolo11s-world.pt
+    # YOLOE (default video detector) — weights come from YOLOE_BASE_MODEL below.
+    # SAHI sliced inference for small objects (auto-used on large frames).
     SAHI_SLICE_HEIGHT: int = 640
     SAHI_SLICE_WIDTH: int = 640
     SAHI_OVERLAP_HEIGHT_RATIO: float = 0.2
@@ -177,10 +184,17 @@ class Settings(BaseSettings):
     # Subdir under RESULTS_DIR for image-detection annotated outputs.
     IMGDET_SUBDIR: str = "imgdet"
 
-    # Base YOLOE weights for zero-shot image detection AND as the training
-    # starting checkpoint. Absolute path recommended. Falls back to
-    # YOLO_WORLD_MODEL when left empty.
-    YOLOE_BASE_MODEL: str = ""
+    # Base YOLOE weights — used by the default video detector and zero-shot
+    # image detection (open-vocabulary `set_classes`). Absolute path recommended.
+    YOLOE_BASE_MODEL: str = "yoloe-11l-seg.pt"
+
+    # Custom-training base weights — a PLAIN Ultralytics YOLOv11 detection model,
+    # loaded via `YOLO` so `.train()` uses the standard DetectionTrainer and the
+    # classification head actually learns. Deliberately decoupled from
+    # YOLOE_BASE_MODEL: open-vocabulary detection stays on YOLOE; custom training
+    # fine-tunes a normal YOLO. Absolute path recommended (offline training needs
+    # the file present locally).
+    TRAIN_BASE_MODEL: str = "yolo11l.pt"
 
     # In-memory cache of loaded image-detection models (LRU). Each loaded
     # YOLOE model shares cuda:0 with the warm video detector — keep this small.
@@ -201,8 +215,28 @@ class Settings(BaseSettings):
     # quality bar; 0.0 only excludes all-zero / metric-less runs.
     MIN_DEPLOYABLE_MAP50: float = Field(default=0.0, ge=0.0, le=1.0)
     TRAIN_DEFAULT_EPOCHS: int = Field(default=100, ge=1)
-    TRAIN_DEFAULT_IMGSZ: int = Field(default=640, ge=64)
-    TRAIN_DEFAULT_BATCH: int = Field(default=16)
+    # Small objects are the whole point of this project: at imgsz=640 the median
+    # labeled object is ~9 px (below the stride-8 detectable floor), which caps
+    # mAP regardless of the model. Train at higher resolution so tiny objects
+    # survive. imgsz=1280 ≈ 4× the activation memory of 640.
+    # Measured on this 16 GB GPU (shared with the ~4 GB warm YOLOE detector):
+    # the per-epoch VALIDATION pass at imgsz=1280 peaks at ~15.9 GB (~0.4 GB
+    # free) and is ~batch-INDEPENDENT — the train batch only drives the lighter
+    # ~10 GB training phase (Ultralytics also grad-accumulates to nbs=64, so a
+    # small batch is fine). So the peak is bound by imgsz, not batch: a solo
+    # training run survives, but there is little headroom for CONCURRENT
+    # detection during the run. The memory lever is imgsz, not batch — to free
+    # real headroom (~6 GB) drop TRAIN_DEFAULT_IMGSZ to 1024, at a small
+    # small-object accuracy cost.
+    TRAIN_DEFAULT_IMGSZ: int = Field(default=1280, ge=64)
+    TRAIN_DEFAULT_BATCH: int = Field(default=3)
+    # Small-object augmentation: mosaic (4-image tiling) and large scale jitter
+    # both shrink already-tiny objects below the detectable floor. Keep mosaic
+    # light and scale tight; close_mosaic disables mosaic for the final epochs so
+    # training finishes on clean, full-size targets. All overridable per request.
+    TRAIN_MOSAIC: float = Field(default=0.3, ge=0.0, le=1.0)
+    TRAIN_SCALE: float = Field(default=0.2, ge=0.0, le=0.9)
+    TRAIN_CLOSE_MOSAIC: int = Field(default=15, ge=0)
     # DataLoader worker processes. Kept low (Ultralytics default is 8) because
     # this box is a 15 GB-RAM WSL2 VM: train + val + final-validation loaders
     # each fork `workers` children, and near the last epoch all three sets are
@@ -213,12 +247,18 @@ class Settings(BaseSettings):
 
     @property
     def yoloe_base_model(self) -> str:
-        """Resolved base weights for zero-shot/training (falls back to the
-        video detector's weights when YOLOE_BASE_MODEL is unset)."""
-        return self.YOLOE_BASE_MODEL or self.YOLO_WORLD_MODEL
+        """Resolved YOLOE base weights for the video detector and zero-shot
+        image detection (open-vocabulary)."""
+        return self.YOLOE_BASE_MODEL
+
+    @property
+    def train_base_model(self) -> str:
+        """Resolved base weights for custom training (plain YOLOv11 detection)."""
+        return self.TRAIN_BASE_MODEL
 
     def ensure_dirs(self) -> None:
         """Create storage directories if they don't exist."""
+        self.LOG_DIR.mkdir(parents=True, exist_ok=True)
         self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         self.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         self.DATASETS_DIR.mkdir(parents=True, exist_ok=True)

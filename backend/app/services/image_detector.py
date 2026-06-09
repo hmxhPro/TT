@@ -222,7 +222,7 @@ def detect_zeroshot(
     base = settings.yoloe_base_model
     if not base:
         raise RuntimeError(
-            "未配置 YOLOE 基础权重（请在 .env 设置 YOLOE_BASE_MODEL 或 YOLO_WORLD_MODEL）。"
+            "未配置 YOLOE 基础权重（请在 .env 设置 YOLOE_BASE_MODEL）。"
         )
     cls = [c.strip() for c in (class_names or []) if c and c.strip()]
     if not cls:

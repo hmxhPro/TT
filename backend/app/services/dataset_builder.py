@@ -36,29 +36,28 @@ def _clamp01(v: float) -> float:
     return min(1.0, max(0.0, v))
 
 
-def _box_to_polygon(cx: float, cy: float, w: float, h: float) -> list[float]:
-    """Axis-aligned YOLO box (normalized cx,cy,w,h) → 4-point rectangle polygon
-    [x1,y1, x2,y1, x2,y2, x1,y2], coords clamped to [0,1]."""
-    x1, y1 = cx - w / 2.0, cy - h / 2.0
-    x2, y2 = cx + w / 2.0, cy + h / 2.0
-    return [_clamp01(v) for v in (x1, y1, x2, y1, x2, y2, x1, y2)]
+def _polygon_to_box(coords: list[float]) -> list[float]:
+    """Enclosing axis-aligned YOLO box (normalized cx,cy,w,h) of a flat polygon
+    [x1,y1, x2,y2, ...]; coords clamped to [0,1]."""
+    xs = [_clamp01(coords[i]) for i in range(0, len(coords), 2)]
+    ys = [_clamp01(coords[i]) for i in range(1, len(coords), 2)]
+    x1, x2 = min(xs), max(xs)
+    y1, y2 = min(ys), max(ys)
+    return [(x1 + x2) / 2.0, (y1 + y2) / 2.0, x2 - x1, y2 - y1]
 
 
 def _read_label(category_id: str, image_id: str) -> str:
-    """Return YOLO **segmentation** label text for one image, class forced to 0
+    """Return YOLO **detection** label text for one image, class forced to 0
     (Phase 1 single-class).
 
-    The configured base weights (yoloe-*-seg) are a segmentation model, so its
-    training loss needs polygon masks — feeding it plain boxes makes the mask
-    tensor empty and crashes F.interpolate. Each working annotation line is
-    therefore normalized to a polygon:
+    The training base is a plain YOLOv11 detection model, so labels are plain
+    boxes ``0 cx cy w h`` (normalized). Each working annotation line is
+    normalized to a box:
 
-      * box line     `c cx cy w h`          → axis-aligned rectangle polygon
-      * polygon line `c x1 y1 x2 y2 ...`    → kept as-is (class → 0)
+      * box line     `c cx cy w h`          → kept as-is (class → 0)
+      * polygon line `c x1 y1 x2 y2 ...`    → enclosing axis-aligned box
 
-    The detection backend only ever reads boxes (image_detector reads r.boxes,
-    never r.masks), so the rectangular masks are harmless at inference; this
-    conversion exists purely to make seg fine-tuning of the base run.
+    (The detection backend only ever reads boxes — image_detector reads r.boxes.)
     Missing/empty file → "" (a valid background sample)."""
     p = settings.ANNOTATIONS_DIR / category_id / f"{image_id}.txt"
     if not p.exists():
@@ -70,16 +69,15 @@ def _read_label(category_id: str, image_id: str) -> str:
             continue
         coords = parts[1:]
         try:
-            if len(coords) == 4:  # box → rectangle polygon
-                cx, cy, w, h = (float(v) for v in coords)
-                poly = _box_to_polygon(cx, cy, w, h)
-            elif len(coords) >= 6 and len(coords) % 2 == 0:  # already a polygon
-                poly = [_clamp01(float(v)) for v in coords]
+            if len(coords) == 4:  # already a box (cx, cy, w, h)
+                box = [_clamp01(float(v)) for v in coords]
+            elif len(coords) >= 6 and len(coords) % 2 == 0:  # polygon → box
+                box = _polygon_to_box([float(v) for v in coords])
             else:
                 continue
         except ValueError:
             continue
-        out.append("0 " + " ".join(f"{v:.6f}" for v in poly))
+        out.append("0 " + " ".join(f"{v:.6f}" for v in box))
     return "\n".join(out)
 
 

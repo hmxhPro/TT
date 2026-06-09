@@ -431,15 +431,9 @@ def get_detector() -> BaseDetector:
             detector = GroundingDINODetector(device=device)
         elif model_name == "florence2":
             detector = Florence2Detector(device=device)
-        elif model_name == "yolo_world":
-            # Import YOLOWorld detector from YOLOWorld module
-            import sys
-            from pathlib import Path
-            yolo_world_path = Path(__file__).parent.parent.parent / "YOLOWorld"
-            if str(yolo_world_path) not in sys.path:
-                sys.path.insert(0, str(yolo_world_path))
-            from yolo_world_detector import YOLOWorldDetector
-            detector = YOLOWorldDetector(device=device)
+        elif model_name == "yoloe":
+            from app.services.yoloe_detector import YOLOEDetector
+            detector = YOLOEDetector(device=device)
         else:
             raise ValueError(f"Unknown DETECTION_MODEL: {model_name}")
 

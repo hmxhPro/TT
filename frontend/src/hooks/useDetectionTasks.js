@@ -25,6 +25,10 @@ import { loadTasks, saveTasks } from '../services/taskStorage'
 let _nextId = 1
 const makeId = () => `t_${Date.now()}_${_nextId++}`
 
+// Tasks that have reached an end state. When new videos are uploaded these are
+// collapsed to a summary row so the workspace focuses on the current task(s).
+const TERMINAL_STATUSES = ['finished', 'failed', 'cancelled', 'early_terminated']
+
 function newTask(file) {
   return {
     id: makeId(),
@@ -50,6 +54,7 @@ function newTask(file) {
     zipReady: false,
     earlyTerminated: false,
     terminationReason: null,
+    collapsed: false,        // UI: summary-row when a newer task is uploaded
   }
 }
 
@@ -109,7 +114,14 @@ export function useDetectionTasks() {
   const addFiles = useCallback((files) => {
     const list = Array.from(files || []).filter(Boolean)
     if (!list.length) return
-    setTasks((prev) => [...prev, ...list.map(newTask)])
+    // Collapse already-ended tasks so the workspace focuses on the new
+    // (current) ones. In-progress tasks stay expanded (don't hide live view).
+    setTasks((prev) => [
+      ...prev.map((t) =>
+        TERMINAL_STATUSES.includes(t.taskStatus) ? { ...t, collapsed: true } : t
+      ),
+      ...list.map(newTask),
+    ])
   }, [])
 
   const removeTask = useCallback((id) => {
@@ -121,6 +133,13 @@ export function useDetectionTasks() {
     tasks.forEach((t) => closeStream(t.id))
     setTasks([])
   }, [tasks, closeStream])
+
+  // Toggle (or explicitly set) a task's collapsed summary-row state.
+  const toggleCollapse = useCallback((id, value) => {
+    patchTask(id, (t) => ({
+      collapsed: typeof value === 'boolean' ? value : !t.collapsed,
+    }))
+  }, [patchTask])
 
   const resetOne = useCallback((id) => {
     closeStream(id)
@@ -537,6 +556,7 @@ export function useDetectionTasks() {
     addFiles,
     removeTask,
     clearAll,
+    toggleCollapse,
     resetOne,
     startAll,
     startOne,

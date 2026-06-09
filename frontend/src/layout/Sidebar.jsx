@@ -23,14 +23,11 @@ export default function Sidebar() {
         <div className="rounded-xl bg-surface border border-ink-200 shadow-soft overflow-hidden">
           {/* logos kept on pure white — the 铁塔 JPG has a white background */}
           <div className="flex items-center justify-center gap-3 px-3 py-2.5 bg-white">
-            <img src="/科大logo.png" alt="中国科学技术大学" className="h-7 object-contain" />
-            <span className="w-px h-6 bg-ink-200" />
-            <img src="/铁塔logo.jpg" alt="中国铁塔" className="h-7 object-contain" />
+            <img src="/科大logo.png" alt="中国科学技术大学" className="h-14 object-contain" />
+            <span className="w-px h-12 bg-ink-200" />
+            <img src="/铁塔logo.jpg" alt="中国铁塔" className="h-14 object-contain" />
           </div>
           <div className="flex items-center gap-2 px-3 py-2 border-t border-ink-200">
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-500 text-white font-bold text-xs shadow-brand">
-              V
-            </span>
             <span className="font-semibold text-ink-900 text-sm tracking-tight">视频检测控制台</span>
           </div>
         </div>

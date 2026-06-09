@@ -34,7 +34,7 @@
 | **PostgreSQL** | **13+** | 任务历史数据库 |
 | **SQLAlchemy** | **2.0** | 异步 ORM |
 | **asyncpg** | **0.29** | PostgreSQL 异步驱动 |
-| **ultralytics** | **8.3.0** | YOLOE / YOLO-World 推理与训练 |
+| **ultralytics** | **8.3.0** | YOLOE 开放词汇推理 + 自定义 YOLO11 训练 |
 | **sahi** | **0.11.18** | 小目标切片推理 |
 | **httpx** | **0.27.0** | 调用 VLM（本地或远端 OpenAI 兼容 API） |
 | Node.js | 18+ | 前端构建（Vite） |
@@ -56,14 +56,40 @@ pip install -r requirements.txt
 
 `requirements.txt` 已含 YOLOE 默认后端所需的 `ultralytics>=8.3.0` 与 `sahi>=0.11.18`。
 
-如需 **Grounding DINO / Florence-2** 备选后端，再额外安装：
+> torch / torchvision 通常由 GPU 容器自带，不经 pip 安装。
+
+#### 较难安装的依赖（含 C / CUDA 扩展，需单独处理）
+
+以下几个包带本地编译扩展，**`pip install -r requirements.txt` 不会自动装好**。它们对应的第三方库已随仓库 **vendored** 在 `backend/ByteTrack`、`backend/GroundingDINO`、`backend/YOLOWorld`，无需另行 `git clone`，只要补齐各自的编译依赖即可。
+
+**① ByteTrack —— 视频多目标跟踪（强烈建议安装）**
+
+ByteTrack 为每个目标分配跨帧稳定的 `track_id`，并支撑“每 N 帧检测 + 中间帧 Kalman 预测”的 ~5× 加速（原理见 [系统功能与技术 · 检测 + 跟踪流程](docs/系统功能与技术.md#检测--跟踪流程)）。**它是默认视频管线的核心，与是否使用备选检测后端无关。** 缺失时不会报错，但会静默降级为 *passthrough* 跟踪器——每帧给每个框分配自增的新 ID，没有任何跨帧持久性（框颜色逐帧乱跳、目标计数灌水、时序确认与 VLM 复核失效）。
+
+`backend/ByteTrack` 已附带，只差一个需编译的 `cython_bbox`（`lap` 已在 `requirements.txt` 内）。二选一：
 
 ```bash
-pip install git+https://github.com/IDEA-Research/GroundingDINO.git   # 或 pip install groundingdino-py
-pip install git+https://github.com/ifzhang/ByteTrack.git             # 或 pip install bytetracker
+pip install cython_bbox     # 路线A（推荐）：复用 backend/ByteTrack，tracker.py 会自动加载它
+pip install bytetracker     # 路线B：独立 pip 包，自带依赖，无需 backend/ByteTrack
 ```
 
-> torch / torchvision 通常由 GPU 容器自带，不经 pip 安装。
+> `cython_bbox` 需现场编译，要求系统装有 `gcc` / `g++`（Ubuntu：`sudo apt-get install build-essential`）；编译失败时改用路线 B。
+>
+> **验证**：重启后端，日志出现 `ByteTrack initialized` 即生效；若仍是 `ByteTrack not found. Falling back to passthrough tracker` 则未装上。
+
+**② Grounding DINO —— 可选检测后端（仅 `DETECTION_MODEL=grounding_dino` 时需要）**
+
+`backend/GroundingDINO` 已附带，但它要**编译 CUDA C++ 算子**（`_C` 扩展），是最容易装失败的一个：需本机有与 torch 版本匹配的 **CUDA 工具链（`nvcc`）** 并设置 `CUDA_HOME`。
+
+```bash
+export CUDA_HOME=/usr/local/cuda     # 指向含 bin/nvcc 的 CUDA 目录
+pip install -e GroundingDINO         # 就地编译 backend/GroundingDINO（接上面 venv，在 backend/ 下执行）
+# 无 nvcc / 想省事：pip install groundingdino-py
+```
+
+> 常见报错 `NVCC not found` / `CUDA_HOME environment variable is not set` → 先装 CUDA toolkit 再导出 `CUDA_HOME`。默认后端是 YOLOE，不切到 Grounding DINO 就**无需安装这个**。
+
+> **Florence-2** 备选后端（`DETECTION_MODEL=florence2`）无需编译，`transformers` 会在首次运行自动下载约 1.5GB 权重（见 [配置 `.env`](#4-配置-env)）。
 
 ### 2. 模型与额外文件
 
@@ -150,15 +176,18 @@ cp backend/.env.example backend/.env
 关键配置项：
 
 ```env
-# ── 检测模型（默认 YOLOE，走 yolo_world 分支加载 YOLOE 权重）──
-DETECTION_MODEL=yolo_world
+# ── 检测模型（默认 YOLOE 开放词表 + SAHI 小目标切片）──
+DETECTION_MODEL=yoloe
 DEVICE=cuda:0                                   # 无 GPU 改 cpu
-YOLO_WORLD_MODEL=/abs/path/to/SOD/backend/models/yolo/yoloe-11l-seg.pt
 YOLOE_BASE_MODEL=/abs/path/to/SOD/backend/models/yolo/yoloe-11l-seg.pt
 
 # ── 可选 SAHI 切片（大图小目标显著提升召回）──
 SAHI_SLICE_HEIGHT=640
 SAHI_SLICE_WIDTH=640
+
+# ── 日志（目录解析为绝对路径，按天轮转、保留 7 天；uvicorn/标准库日志一并汇入）──
+LOG_DIR=./logs
+LOG_LEVEL=INFO                                  # 控制台级别；文件始终 DEBUG。DEBUG=true 时 500 才返回原始错误
 
 # ── 数据库（建议由 init_postgres.sh 自动写入）──
 DATABASE_URL=postgresql+asyncpg://sod_app:<password>@localhost:5432/sod
@@ -258,7 +287,7 @@ python -m vllm.entrypoints.openai.api_server \
 - [ ] `git clone` 代码，`pip install -r backend/requirements.txt`
 - [ ] `yoloe-11l-seg.pt` → `backend/models/yolo/`；`mobileclip_blt.ts` → `backend/`（见 [模型与额外文件](#2-模型与额外文件)）
 - [ ] 删除 / 重建 `backend/weights/mobileclip_blt.ts` 断链
-- [ ] 改 `backend/.env`：`YOLO_WORLD_MODEL` / `YOLOE_BASE_MODEL` 绝对路径、`DEVICE`、`DETECTION_MODEL=yolo_world`
+- [ ] 改 `backend/.env`：`YOLOE_BASE_MODEL` 绝对路径、`DEVICE`、`DETECTION_MODEL=yoloe`
 - [ ] `bash backend/scripts/init_postgres.sh` 建库建角色（写好 `DATABASE_URL`）
 - [ ] （可选）拷 `backend/datasets/ annotations/ runs/`，或 `pg_dump` 旧库连数据迁
 - [ ] `bash backend/start.sh` → 看到 “DB schema ensured” 且检测能跑通
@@ -286,9 +315,11 @@ psql   -U sod_app -h localhost -d sod < sod_backup.sql       # 新机（先建�
 | `/readyz` 返回 503 | 模型仍在加载，或 DB / GPU 不可用；`/livez` 仍应为 200。 |
 | 历史接口 503 / 看不到历史 | PostgreSQL 未运行或 `DATABASE_URL` 错（注意 `+asyncpg` 后缀）；检测主路径不受影响。 |
 | "需要 mobileclip_blt.ts 文本编码器" | 文件没放到 `backend/`；见 [模型与额外文件](#2-模型与额外文件)。 |
+| 跟踪框 ID 每帧跳变 / 无持久跟踪 | ByteTrack 未装好，已降级为 passthrough；日志若见 `Falling back to passthrough tracker`，按 [安装依赖 · ByteTrack](#1-安装依赖) 装 `cython_bbox`（或 `bytetracker`）后重启。 |
 | VLM 调用失败 / 复核不生效 | 确认 vLLM 在 `:8010`、`VLM_API_BASE` 一致；或暂设 `VLM_ENABLED=false`。 |
 | 前端有界面但拿不到数据 | 后端未起，或生产环境 `/api` 未反代到后端；开发态确认 Vite 代理。 |
 | CUDA OOM | 调小 `batch` / `imgsz`、关闭 SAHI、降低 `VLM_MAX_CONCURRENT`。 |
+| 某功能报错 / 想定位问题 | 后端统一返回 `{code,message,detail,request_id}`，响应头带 `X-Request-ID`；用该 request_id `grep backend/logs/app_<日期>.log` 可查完整堆栈（详见 [系统功能与技术 · 错误处理与日志](docs/系统功能与技术.md#错误处理与日志)）。 |
 
 ---
 

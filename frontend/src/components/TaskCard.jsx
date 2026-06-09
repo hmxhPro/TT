@@ -13,7 +13,7 @@
 import React, { useState, useMemo } from 'react'
 import {
   Film, Trash2, RotateCcw, Download, AlertCircle, CheckCircle2, Clock,
-  Pause, Play, X, Ban, StopCircle,
+  Pause, Play, X, Ban, StopCircle, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import ProgressBar from './ProgressBar'
 import ResultViewer from './ResultViewer'
@@ -42,9 +42,10 @@ function formatSize(bytes) {
   return `${(bytes / 1e9).toFixed(2)} GB`
 }
 
-export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, onResume, onTerminate }) {
+export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, onResume, onTerminate, onToggleCollapse }) {
   const meta = STATUS_META[task.taskStatus] ?? STATUS_META.queued
   const StatusIcon = meta.icon
+  const collapsed = !!task.collapsed
 
   const canRemove = !['uploading', 'pending', 'running', 'paused', 'packaging'].includes(task.taskStatus)
   const canRetry = ['failed', 'cancelled'].includes(task.taskStatus)
@@ -89,7 +90,11 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
         <div className="p-2 rounded-xl bg-brand-50 text-brand-500 flex-shrink-0">
           <Film size={18} />
         </div>
-        <div className="flex-1 min-w-0">
+        <div
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={() => onToggleCollapse?.(task.id)}
+          title={collapsed ? '展开详情' : '折叠'}
+        >
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-ink-800 truncate" title={task.fileName}>
               {task.fileName}
@@ -206,11 +211,19 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
               <span>移除</span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => onToggleCollapse?.(task.id)}
+            title={collapsed ? '展开详情' : '折叠'}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100"
+          >
+            {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </button>
         </div>
       </div>
 
       {/* ── Progress ─────────────────────────────────────────────────── */}
-      {task.taskStatus !== 'queued' && (
+      {!collapsed && task.taskStatus !== 'queued' && (
         <ProgressBar
           taskStatus={task.taskStatus}
           progress={task.progress}
@@ -222,21 +235,21 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
       )}
 
       {/* ── Error ────────────────────────────────────────────────────── */}
-      {task.error && (
+      {!collapsed && task.error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-xs">
           ⚠ {task.error}
         </div>
       )}
 
       {/* ── Early Termination Notice ─────────────────────────────────── */}
-      {task.earlyTerminated && task.terminationReason && (
+      {!collapsed && task.earlyTerminated && task.terminationReason && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs">
           ℹ️ {task.terminationReason}
         </div>
       )}
 
       {/* ── Real-time viewer (always visible once frames start) ──────── */}
-      {showViewer && (
+      {!collapsed && showViewer && (
         <div className="pt-2 border-t border-ink-100">
           <ResultViewer
             taskId={task.taskId}
@@ -250,7 +263,7 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
       )}
 
       {/* ── Modal preview ────────────────────────────────────────────── */}
-      {previewIdx != null && previewList.length > 0 && (
+      {!collapsed && previewIdx != null && previewList.length > 0 && (
         <FramePreview
           frames={previewList}
           index={Math.min(previewIdx, previewList.length - 1)}

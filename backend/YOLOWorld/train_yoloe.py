@@ -1,15 +1,24 @@
 """
-YOLOE training CLI.
--------------------
-Fine-tune / train a YOLOE (Ultralytics) model on a custom dataset.
+Custom-model training CLI.
+--------------------------
+Fine-tune a plain Ultralytics YOLOv11 (detection) model on a custom dataset.
+
+The base checkpoint is loaded via ``ultralytics.YOLO`` so ``.train()`` uses the
+standard DetectionTrainer and the classification head learns normally. (Loading
+a YOLOE-family checkpoint here via ``YOLOE`` would instead route ``.train()`` to
+the multi-modal YOLOETrainer, whose text/cls branch is never supervised on a
+fixed-class dataset — cls loss never drops, mAP stays flat.) Open-vocabulary
+detection elsewhere still uses YOLOE; this script is only the custom-training
+path. The base defaults to ``TRAIN_BASE_MODEL`` in backend/.env (e.g. yolo11l.pt).
 
 Usage:
     python train_yoloe.py --data dataset.yaml [options]
 
 The trained weights land at:
     <project>/<name>/weights/best.pt
-Copy that absolute path into backend/.env's YOLO_WORLD_MODEL to swap the
-detection backend over to the new weights.
+The backend registers that best.pt as a selectable trained model (chosen
+per-request by model_id); no .env change is needed to use it. (The filename
+train_yoloe.py is kept for compatibility with the backend training runner.)
 """
 
 from __future__ import annotations
@@ -20,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-# Force offline mode for ultralytics (matches yolo_world_detector.py:55)
+# Force offline mode for ultralytics (never hit the network during training)
 os.environ.setdefault("YOLO_OFFLINE", "1")
 os.environ.setdefault("ULTRALYTICS_OFFLINE", "1")
 
@@ -33,22 +42,22 @@ from app.core.config import settings  # noqa: E402
 from app.core.logging import logger  # noqa: E402
 
 
-def _load_yoloe_model(weights: str):
-    """Instantiate a YOLOE model, falling back to YOLO if YOLOE is unavailable."""
-    try:
-        from ultralytics import YOLOE  # type: ignore
+def _load_train_model(weights: str):
+    """Instantiate a plain Ultralytics YOLO model for standard fine-tuning.
 
-        logger.info(f"Loading YOLOE base weights: {weights}")
-        return YOLOE(weights)
-    except ImportError:
-        logger.warning(
-            "ultralytics.YOLOE not found — falling back to ultralytics.YOLO. "
-            "Upgrade with: pip install -U 'ultralytics>=8.3.0' for full YOLOE support."
-        )
-        from ultralytics import YOLO
+    We deliberately use ``YOLO`` (not ``YOLOE``): the training base is a normal
+    YOLOv11 detection checkpoint, and ``YOLO(...).train()`` routes to the
+    standard DetectionTrainer so the classification head trains normally.
+    Loading the same weights via ``YOLOE`` would route ``.train()`` to the
+    multi-modal YOLOETrainer, whose text/cls branch is never supervised on a
+    fixed-class dataset (cls loss never drops, mAP stays flat) — the failure
+    mode this replaces. Open-vocabulary detection still uses YOLOE elsewhere
+    (see app/services/yoloe_detector.py).
+    """
+    from ultralytics import YOLO
 
-        logger.info(f"Loading YOLO base weights: {weights}")
-        return YOLO(weights)
+    logger.info(f"Loading YOLO training base weights: {weights}")
+    return YOLO(weights)
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,16 +74,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default=settings.YOLO_WORLD_MODEL,
-        help="Pretrained weights to start from (e.g. yoloe-11l-seg.pt). "
-             "Defaults to YOLO_WORLD_MODEL in .env.",
+        default=settings.train_base_model,
+        help="Pretrained weights to start from (e.g. yolo11l.pt). "
+             "Defaults to TRAIN_BASE_MODEL in .env.",
     )
-    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs.")
-    parser.add_argument("--imgsz", type=int, default=640, help="Input image size.")
+    parser.add_argument("--epochs", type=int, default=settings.TRAIN_DEFAULT_EPOCHS, help="Number of training epochs.")
+    parser.add_argument("--imgsz", type=int, default=settings.TRAIN_DEFAULT_IMGSZ, help="Input image size.")
     parser.add_argument(
         "--batch",
         type=int,
-        default=16,
+        default=settings.TRAIN_DEFAULT_BATCH,
         help="Batch size; pass -1 to let Ultralytics auto-fit GPU memory.",
     )
     parser.add_argument(
@@ -123,6 +132,26 @@ def parse_args() -> argparse.Namespace:
         help="Initial learning rate (Ultralytics default if unset).",
     )
     parser.add_argument(
+        "--mosaic",
+        type=float,
+        default=settings.TRAIN_MOSAIC,
+        help="Mosaic augmentation probability (0-1). Kept low for small objects "
+             "(mosaic tiles 4 images and shrinks each ~2×).",
+    )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        default=settings.TRAIN_SCALE,
+        help="Scale-jitter gain. Kept tight for small objects.",
+    )
+    parser.add_argument(
+        "--close-mosaic",
+        dest="close_mosaic",
+        type=int,
+        default=settings.TRAIN_CLOSE_MOSAIC,
+        help="Disable mosaic for the final N epochs (finish on clean targets).",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="On success, print a machine-readable result line "
@@ -164,6 +193,9 @@ def run_training(
     patience: int = 50,
     freeze: int | None = None,
     lr0: float | None = None,
+    mosaic: float | None = None,
+    scale: float | None = None,
+    close_mosaic: int | None = None,
 ) -> dict:
     """Train a YOLOE model and return a result dict.
 
@@ -175,6 +207,10 @@ def run_training(
     """
     device = device or settings.DEVICE
     project = project or str(_BACKEND_ROOT / "runs" / "train")
+    # Small-object augmentation defaults (overridable by caller/CLI).
+    mosaic = settings.TRAIN_MOSAIC if mosaic is None else mosaic
+    scale = settings.TRAIN_SCALE if scale is None else scale
+    close_mosaic = settings.TRAIN_CLOSE_MOSAIC if close_mosaic is None else close_mosaic
 
     data_path = Path(data)
     if not data_path.exists():
@@ -190,9 +226,10 @@ def run_training(
     logger.info(f"  device  : {device}")
     logger.info(f"  project : {project}")
     logger.info(f"  name    : {name}")
+    logger.info(f"  aug     : mosaic={mosaic} scale={scale} close_mosaic={close_mosaic}")
     logger.info("─" * 60)
 
-    model_obj = _load_yoloe_model(model)
+    model_obj = _load_train_model(model)
 
     train_kwargs = dict(
         data=str(data_path),
@@ -205,6 +242,9 @@ def run_training(
         resume=resume,
         workers=workers,
         patience=patience,
+        mosaic=mosaic,
+        scale=scale,
+        close_mosaic=close_mosaic,
     )
     if freeze is not None:
         train_kwargs["freeze"] = freeze
@@ -252,14 +292,17 @@ def main() -> int:
             patience=args.patience,
             freeze=args.freeze,
             lr0=args.lr0,
+            mosaic=args.mosaic,
+            scale=args.scale,
+            close_mosaic=args.close_mosaic,
         )
     except FileNotFoundError as exc:
         logger.error(str(exc))
         return 1
 
     logger.info(
-        "To use these weights in the detection backend, set in backend/.env:\n"
-        f"    YOLO_WORLD_MODEL={info['best_pt']}"
+        "Training done. The backend registers best.pt as a selectable trained "
+        "model (chosen per-request by model_id); no .env change needed."
     )
 
     if args.json:

@@ -21,7 +21,7 @@ import { StatRow } from '../components/ui'
 
 export default function DetectPage() {
   const {
-    tasks, addFiles, removeTask, clearAll,
+    tasks, addFiles, removeTask, clearAll, toggleCollapse,
     cancel, pause, resume, terminate,
     prompt, setPrompt, detInterval, setDetInterval, enableVlm, setEnableVlm,
     showAdvanced, setShowAdvanced, selectedModelId, modelReloadToken,
@@ -215,6 +215,7 @@ export default function DetectPage() {
                   onPause={pause}
                   onResume={resume}
                   onTerminate={terminate}
+                  onToggleCollapse={toggleCollapse}
                 />
               ))}
             </div>

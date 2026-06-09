@@ -98,10 +98,10 @@ class TrainingManager:
             self._active_job_id = job_id
 
         try:
-            base_model = (params.get("base_model") or settings.yoloe_base_model or "").strip()
+            base_model = (params.get("base_model") or settings.train_base_model or "").strip()
             if not base_model:
                 raise RuntimeError(
-                    "未配置 YOLOE 基础权重（.env 的 YOLOE_BASE_MODEL / YOLO_WORLD_MODEL）。"
+                    "未配置训练基础权重（.env 的 TRAIN_BASE_MODEL）。"
                 )
             if not Path(base_model).exists():
                 raise FileNotFoundError(f"基础权重文件不存在: {base_model}")
@@ -113,6 +113,14 @@ class TrainingManager:
             # (load in main process) and must not fall through to the default.
             _workers = params.get("workers")
             workers = settings.TRAIN_DEFAULT_WORKERS if _workers is None else int(_workers)
+            # Small-object augmentation knobs. Explicit None check: 0.0 / 0 are
+            # valid (= disable mosaic / no scale jitter) and must not fall back.
+            _mosaic = params.get("mosaic")
+            mosaic = settings.TRAIN_MOSAIC if _mosaic is None else float(_mosaic)
+            _scale = params.get("scale")
+            scale = settings.TRAIN_SCALE if _scale is None else float(_scale)
+            _close = params.get("close_mosaic")
+            close_mosaic = settings.TRAIN_CLOSE_MOSAIC if _close is None else int(_close)
 
             # next version for this category (single-training lock → no race)
             version = await self._next_version(category["id"])
@@ -137,6 +145,7 @@ class TrainingManager:
                 params={
                     "epochs": epochs, "imgsz": imgsz, "batch": batch,
                     "workers": workers,
+                    "mosaic": mosaic, "scale": scale, "close_mosaic": close_mosaic,
                     "base_model": base_model, "version": version,
                     "num_images": ds["num_images"], "val_is_train": ds["val_is_train"],
                 },
@@ -151,6 +160,9 @@ class TrainingManager:
                 "--imgsz", str(imgsz),
                 "--batch", str(batch),
                 "--workers", str(workers),
+                "--mosaic", str(mosaic),
+                "--scale", str(scale),
+                "--close-mosaic", str(close_mosaic),
                 "--device", settings.DEVICE,
                 "--project", project,
                 "--name", run_name,

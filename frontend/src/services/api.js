@@ -21,14 +21,46 @@ const api = axios.create({
 
 // ── Request / Response interceptors ──────────────────────────────────────────
 
+// Normalize every backend error into a friendly Error. The backend wraps all
+// non-2xx responses as { code, message, detail, request_id } (see
+// app/core/errors.py); older/raw FastAPI bodies (string or array `detail`) are
+// still handled. The thrown Error carries `.code`, `.requestId`, `.status` so
+// callers/UI can branch or show the id. For 5xx we append the request id to the
+// message so it surfaces everywhere errors are already displayed (TaskCard,
+// alerts, ErrorBoundary) — letting users quote it for server-log lookup.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message =
-      error.response?.data?.detail ||
-      error.message ||
-      'An unknown error occurred.'
-    return Promise.reject(new Error(message))
+    const res = error.response
+    const data = res?.data
+    let message
+
+    if (data && typeof data === 'object') {
+      if (typeof data.message === 'string' && data.message) {
+        message = data.message
+      } else if (typeof data.detail === 'string' && data.detail) {
+        message = data.detail
+      } else if (Array.isArray(data.detail)) {
+        // FastAPI default 422 body: [{ loc, msg, type }, ...]
+        message = data.detail.map((d) => d?.msg || JSON.stringify(d)).join('；')
+      }
+    }
+    if (!message) {
+      message = res
+        ? `请求失败（HTTP ${res.status}）`
+        : '网络连接失败，请检查后端服务是否运行。'
+    }
+
+    const requestId = data?.request_id || res?.headers?.['x-request-id']
+    if (requestId && res && res.status >= 500) {
+      message = `${message}（错误码 ${requestId}）`
+    }
+
+    const err = new Error(message)
+    err.code = data?.code
+    err.requestId = requestId
+    err.status = res?.status
+    return Promise.reject(err)
   }
 )
 

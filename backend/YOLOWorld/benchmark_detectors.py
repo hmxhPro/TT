@@ -1,5 +1,5 @@
 """
-Benchmark script to compare YOLO-World with other detectors.
+Benchmark script to compare YOLOE with other detectors.
 
 Usage:
     python benchmark_detectors.py --image path/to/image.jpg --prompt "person . car"
@@ -116,8 +116,8 @@ def main():
         "--detectors",
         type=str,
         nargs="+",
-        default=["grounding_dino", "yolo_world"],
-        help="Detectors to benchmark (grounding_dino, florence2, yolo_world)"
+        default=["grounding_dino", "yoloe"],
+        help="Detectors to benchmark (grounding_dino, florence2, yoloe)"
     )
 
     args = parser.parse_args()

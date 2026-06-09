@@ -75,6 +75,9 @@ async def start_training(category_id: str, body: TrainRequest) -> TrainResponse:
         "imgsz": body.imgsz,
         "batch": body.batch,
         "base_model": body.base_model,
+        "mosaic": body.mosaic,
+        "scale": body.scale,
+        "close_mosaic": body.close_mosaic,
     }
     try:
         job_id = await training_manager.start(category, images, params)

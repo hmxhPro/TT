@@ -92,10 +92,17 @@ class ByteTracker:
             # Load ByteTrack tracker directly from local repo, bypassing
             # yolox/__init__.py (which pulls in thop/other heavy deps).
             import sys as _sys, os as _os, types as _types
-            _tracker_dir = _os.path.abspath(
-                _os.path.join(_os.path.dirname(__file__), "../../../ByteTrack/yolox/tracker")
-            )
-            if _os.path.isdir(_tracker_dir):
+            _here = _os.path.dirname(__file__)
+            # ByteTrack lives at backend/ByteTrack (../../ from this file);
+            # also accept a repo-root checkout (../../../). First match wins.
+            _tracker_dir = ""
+            for _rel in ("../../ByteTrack/yolox/tracker",
+                         "../../../ByteTrack/yolox/tracker"):
+                _cand = _os.path.abspath(_os.path.join(_here, _rel))
+                if _os.path.isdir(_cand):
+                    _tracker_dir = _cand
+                    break
+            if _tracker_dir:
                 if "yolox" not in _sys.modules:
                     _yolox_pkg = _types.ModuleType("yolox")
                     _yolox_pkg.__path__ = [_os.path.dirname(_tracker_dir)]

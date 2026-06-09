@@ -8,8 +8,26 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Error envelope (A-2)
+# ────────────────────────────────────────────────────────────────────────────
+
+class ErrorResponse(BaseModel):
+    """Unified body for every non-2xx response.
+
+    `code` is machine-readable (frontend may branch on it), `message` is the
+    human-facing Chinese text, `detail` carries extra context (validation field
+    list, or the raw exception string when DEBUG), and `request_id` ties the
+    response to its server-side log lines.
+    """
+    code: str
+    message: str
+    detail: Optional[Any] = None
+    request_id: str
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -274,6 +292,9 @@ class TrainRequest(BaseModel):
     imgsz: Optional[int] = Field(default=None, ge=64, le=2048)
     batch: Optional[int] = Field(default=None)
     base_model: Optional[str] = Field(default=None, description="覆盖训练基础权重（绝对路径）")
+    mosaic: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="马赛克增强概率（小目标建议低；0=关闭）")
+    scale: Optional[float] = Field(default=None, ge=0.0, le=0.9, description="尺度抖动增益（小目标建议低）")
+    close_mosaic: Optional[int] = Field(default=None, ge=0, description="最后 N 轮关闭马赛克")
 
 
 class TrainResponse(BaseModel):

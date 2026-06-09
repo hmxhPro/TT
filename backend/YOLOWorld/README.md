@@ -1,191 +1,84 @@
-# YOLO-World + SAHI Detection Component
+# YOLOE Training Component
+
+This directory holds the **custom-training** tooling for the project's YOLOE detector.
+
+> The runtime **video detector** itself now lives at
+> `backend/app/services/yoloe_detector.py` (`YOLOEDetector`), selected by
+> `DETECTION_MODEL=yoloe`. This directory is no longer a detector implementation —
+> it is where you fine-tune YOLOE on your own data and where the offline
+> benchmark/utility scripts live.
 
 ## 📁 Directory Structure
 
 ```
 YOLOWorld/
-├── README.md                    # Component overview and installation
-├── QUICK_START.md              # Quick start guide
-├── USAGE_GUIDE_CN.md           # Detailed usage guide (Chinese)
-├── requirements.txt            # Python dependencies
-├── install.sh                  # Installation script
-├── yolo_world_detector.py      # Main detector implementation
-├── test_yolo_world.py          # Test script
-└── benchmark_detectors.py      # Performance comparison tool
+├── README.md               # This file
+├── TRAINING.md             # Full custom-training guide (中文)
+├── train_yoloe.py          # YOLOE training CLI (invoked by the in-app training workflow)
+├── dataset.yaml.example    # Example Ultralytics dataset YAML
+├── benchmark_detectors.py  # Offline detector speed/quality comparison
+└── requirements.txt        # Training/inference extras (ultralytics, sahi)
 ```
 
-## 🚀 Quick Start
+## 🚀 Training
 
-### 1. Install
-```bash
-bash install.sh
-```
-
-### 2. Configure
-Edit `backend/.env`:
-```bash
-DETECTION_MODEL=yolo_world
-YOLO_WORLD_MODEL=yolo11l-world.pt
-```
-
-### 3. Test
-```bash
-python test_yolo_world.py --image ../uploads/test.jpg --prompt "person . car"
-```
-
-## 📚 Documentation
-
-- **QUICK_START.md** - Get started in 3 steps
-- **USAGE_GUIDE_CN.md** - Complete guide with troubleshooting (中文)
-- **requirements.txt** - Package dependencies
-
-## 🔧 Scripts
-
-### test_yolo_world.py
-Test the detector on a single image:
-```bash
-python test_yolo_world.py --image path/to/image.jpg --prompt "person . car . dog"
-```
-
-### benchmark_detectors.py
-Compare performance with other detectors:
-```bash
-python benchmark_detectors.py \
-    --image path/to/image.jpg \
-    --prompt "person . car" \
-    --detectors grounding_dino yolo_world \
-    --iterations 5
-```
-
-### install.sh
-Automated installation of dependencies:
-```bash
-bash install.sh
-```
-
-## 🎯 Features
-
-- **Open-vocabulary detection** - Detect any object described in text
-- **SAHI integration** - Sliced inference for small objects
-- **Adaptive slicing** - Automatically adjusts based on image size
-- **Multiple model sizes** - Choose speed vs accuracy tradeoff
-- **Easy integration** - Drop-in replacement for existing detectors
-
-## 📦 Models
-
-| Model | Size | Speed | Accuracy | Recommended For |
-|-------|------|-------|----------|-----------------|
-| yolo11s-world.pt | ~40MB | ⚡⚡⚡ | ⭐⭐ | Real-time, edge devices |
-| yolo11m-world.pt | ~80MB | ⚡⚡ | ⭐⭐⭐ | Balanced performance |
-| yolo11l-world.pt | ~120MB | ⚡ | ⭐⭐⭐⭐ | High accuracy tasks |
-
-Models are auto-downloaded to `~/.cache/ultralytics/` on first use.
-
-## 🔄 Integration
-
-The YOLO-World detector integrates seamlessly with the existing pipeline:
-
-```python
-# In detector.py, the factory automatically loads YOLO-World
-# when DETECTION_MODEL=yolo_world
-
-from app.services.detector import get_detector
-
-detector = get_detector()  # Returns YOLOWorldDetector
-detections = detector.predict(image, prompt, box_threshold, text_threshold)
-```
-
-## ⚙️ Configuration
-
-All configuration is done via environment variables in `.env`:
+The in-app training workflow (the "训练" panel / `training_manager.py`) shells out to
+`train_yoloe.py`. To run it manually:
 
 ```bash
-# Model selection
-YOLO_WORLD_MODEL=yolo11l-world.pt
+python backend/YOLOWorld/train_yoloe.py \
+    --data backend/YOLOWorld/dataset.yaml \
+    --model /abs/path/to/backend/models/yolo/yoloe-11l-seg.pt   # defaults to YOLOE_BASE_MODEL in .env
+```
 
-# SAHI parameters
+The trained weights land at `<project>/<name>/weights/best.pt`. See **TRAINING.md** for the
+full guide (dataset layout, all flags, swapping the runtime weights, WSL2 RAM notes).
+
+## ⚙️ Configuration (`backend/.env`)
+
+```bash
+# Default video detector
+DETECTION_MODEL=yoloe
+# Shared YOLOE base weights: runtime detector + zero-shot image detection + training start point
+YOLOE_BASE_MODEL=/abs/path/to/backend/models/yolo/yoloe-11l-seg.pt
+
+# SAHI sliced inference for small objects (used by the runtime YOLOEDetector on large frames)
 SAHI_SLICE_HEIGHT=640
 SAHI_SLICE_WIDTH=640
 SAHI_OVERLAP_HEIGHT_RATIO=0.2
 SAHI_OVERLAP_WIDTH_RATIO=0.2
 
-# Detection thresholds
-BOX_THRESHOLD=0.25
-TEXT_THRESHOLD=0.25
-
-# Device
 DEVICE=cuda:0
 ```
 
-## 🐛 Troubleshooting
+## 📦 YOLOE base models
 
-### Installation Issues
+| Model | Size | Speed | Accuracy |
+|-------|------|-------|----------|
+| yoloe-11s-seg.pt | small | ⚡⚡⚡ | ⭐⭐ |
+| yoloe-11m-seg.pt | medium | ⚡⚡ | ⭐⭐⭐ |
+| yoloe-11l-seg.pt | large | ⚡ | ⭐⭐⭐⭐ |
+
+Place the weight under `backend/models/yolo/` and point `YOLOE_BASE_MODEL` at it.
+
+## 🔧 Benchmark
+
+Compare the YOLOE detector against Grounding DINO offline:
+
 ```bash
-# If install.sh fails, try manual installation:
-pip install ultralytics>=8.3.0
-pip install sahi>=0.11.18
+python benchmark_detectors.py \
+    --image path/to/image.jpg \
+    --prompt "person . car" \
+    --detectors grounding_dino yoloe \
+    --iterations 5
 ```
-
-### GPU Memory Issues
-```bash
-# Use smaller model
-YOLO_WORLD_MODEL=yolo11m-world.pt
-
-# Increase slice size
-SAHI_SLICE_HEIGHT=800
-
-# Or use CPU
-DEVICE=cpu
-```
-
-### No Detections
-```bash
-# Lower threshold
-BOX_THRESHOLD=0.15
-
-# Check prompt format (use dots)
-prompt="person . car . dog"  # ✓ Correct
-prompt="person, car, dog"    # ✗ Wrong
-```
-
-## 📊 Performance
-
-Typical performance on RTX 3090 (1920x1080 image):
-
-| Detector | Load Time | Inference | FPS | Small Objects |
-|----------|-----------|-----------|-----|---------------|
-| Grounding DINO | ~8s | ~0.8s | 1.25 | Good |
-| YOLO-World (L) | ~3s | ~0.3s | 3.33 | Excellent (SAHI) |
-| YOLO-World (M) | ~2s | ~0.2s | 5.00 | Excellent (SAHI) |
-| YOLO-World (S) | ~1s | ~0.1s | 10.00 | Very Good (SAHI) |
-
-*Note: SAHI adds overhead but significantly improves small object detection*
 
 ## 🔗 References
 
-- [YOLO-World Paper](https://arxiv.org/abs/2401.17270)
 - [Ultralytics Documentation](https://docs.ultralytics.com/)
 - [SAHI GitHub](https://github.com/obss/sahi)
-- [YOLO-World GitHub](https://github.com/AILab-CVC/YOLO-World)
 
 ## 📝 License
 
-This component uses:
 - Ultralytics YOLO (AGPL-3.0)
 - SAHI (MIT)
-
-## 🤝 Contributing
-
-To add new features or fix bugs:
-1. Modify `yolo_world_detector.py`
-2. Test with `test_yolo_world.py`
-3. Update documentation
-4. Run benchmark to verify performance
-
-## 💡 Tips
-
-1. **For small objects**: Use SAHI with smaller slices (512x512)
-2. **For speed**: Use yolo11s-world with larger slices (800x800)
-3. **For accuracy**: Use yolo11l-world with more overlap (0.3)
-4. **For memory**: Increase slice size or use smaller model
-5. **For debugging**: Check logs in `backend/logs/`

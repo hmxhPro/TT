@@ -28,6 +28,7 @@ from app.api import categories, dataset, training, image_detect
 from app.api import models as yoloe_models
 from app.core import state as app_state
 from app.core.config import settings
+from app.core.errors import register_error_handling
 from app.core.logging import logger, setup_logging
 
 
@@ -81,7 +82,6 @@ async def lifespan(app: FastAPI):
     # ── Startup ───────────────────────────────────────────────────────────
     setup_logging(debug=settings.DEBUG)
     settings.ensure_dirs()
-    os.makedirs("logs", exist_ok=True)
 
     logger.info("=" * 60)
     logger.info("Video Detection Agent starting up")
@@ -231,6 +231,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # ── Error handling + request correlation (A-2 / O-5) ──────────────────
+    # Registers the request-context middleware (request_id + X-Request-ID +
+    # access log) and the unified {code,message,detail,request_id} handlers.
+    register_error_handling(app)
 
     # ── API Routers ───────────────────────────────────────────────────────
     app.include_router(upload.router, prefix="/api", tags=["Upload"])

@@ -107,7 +107,7 @@ python backend/YOLOWorld/train_yoloe.py \
 
 ### 4.2 从指定预训练权重开始
 
-默认会读取 `backend/.env` 中的 `YOLO_WORLD_MODEL`。要显式指定：
+默认会读取 `backend/.env` 中的 `YOLOE_BASE_MODEL`。要显式指定：
 
 ```bash
 python backend/YOLOWorld/train_yoloe.py \
@@ -164,7 +164,7 @@ python backend/YOLOWorld/train_yoloe.py \
 | 参数 | 默认值 | 说明 |
 |---|---|---|
 | `--data` | **必填** | 数据集 YAML 路径 |
-| `--model` | `.env` 的 `YOLO_WORLD_MODEL` | 起始权重，YOLOE 默认 `yoloe-11l-seg.pt` |
+| `--model` | `.env` 的 `YOLOE_BASE_MODEL` | 起始权重，YOLOE 默认 `yoloe-11l-seg.pt` |
 | `--epochs` | 100 | 训练轮数 |
 | `--imgsz` | 640 | 输入图像尺寸 |
 | `--batch` | 16 | 批大小；`-1` 表示自动按显存匹配 |
@@ -208,10 +208,10 @@ backend/runs/train/yoloe_exp/
 
 只需改一行配置：
 
-1. 打开 `backend/.env`，把 `YOLO_WORLD_MODEL` 改为你的 `best.pt` 绝对路径：
+1. 打开 `backend/.env`，把 `YOLOE_BASE_MODEL` 改为你的 `best.pt` 绝对路径：
 
    ```env
-   YOLO_WORLD_MODEL=/home/hmxh/workspace/sodv3/SOD/backend/runs/train/yoloe_exp/weights/best.pt
+   YOLOE_BASE_MODEL=/home/hmxh/workspace/sodv3/SOD/backend/runs/train/yoloe_exp/weights/best.pt
    ```
 
 2. 重启后端：
@@ -223,9 +223,9 @@ backend/runs/train/yoloe_exp/
 
    或直接重启 `start_all.sh`。
 
-3. 日志里出现 `Using local model file: .../best.pt` 即说明新权重已加载。
+3. 日志里出现 `Using local YOLOE weights: .../best.pt` 即说明新权重已加载。
 
-> 检测代码（`backend/YOLOWorld/yolo_world_detector.py`）会自动识别本地权重文件，无需改动业务代码。
+> 检测代码（`backend/app/services/yoloe_detector.py`）会自动识别本地权重文件，无需改动业务代码。
 
 ---
 
