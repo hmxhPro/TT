@@ -17,6 +17,7 @@ import signal
 os.environ.setdefault("OPENCV_FFMPEG_LOGLEVEL", "-8")
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,15 +39,31 @@ from app.core.logging import logger, setup_logging
 _ACTIVE_TASK_STATUSES = frozenset({"pending", "running", "paused", "packaging"})
 
 
+# Absolute path to THIS install's training script. The orphan reaper matches it
+# against /proc/<pid>/cmdline so a backend NEVER kills a training process that
+# belongs to a DIFFERENT install. This matters when two installs (e.g. the cu121
+# bundle and an older one) share one PostgreSQL DB: each backend's startup reaper
+# reads "running" job PIDs from the shared `training_jobs` table, and without this
+# install scope a crash-looping sibling (e.g. one that can't bind :8000 and keeps
+# restarting under `Restart=on-failure`) would SIGTERM this install's live
+# training child on every restart — observed as training exit code -15.
+_THIS_TRAIN_SCRIPT = str(
+    (Path(__file__).resolve().parent.parent / "YOLOWorld" / "train_yoloe.py")
+)
+
+
 def _reap_orphan_training(pid: int) -> bool:
     """Best-effort kill of a leftover training process group from a previous
     backend generation (R-1).
 
-    Before signalling, confirm the pid is actually a `train_yoloe` process via
-    /proc/<pid>/cmdline so a reused pid (a different, innocent process) is never
-    killed. Tries the process group first (the child is its own group leader
-    when spawned with start_new_session), then the bare pid as a fallback for
-    legacy orphans spawned before that change. Returns True if a signal was sent.
+    Before signalling, confirm via /proc/<pid>/cmdline that the pid is (a) a
+    `train_yoloe` process AND (b) THIS install's train script (absolute-path
+    match). (a) stops a reused pid (a different, innocent process) from being
+    killed; (b) stops a sibling install that shares the same DB from being
+    cross-killed. Tries the process group first (the child is its own group
+    leader when spawned with start_new_session), then the bare pid as a fallback
+    for legacy orphans spawned before that change. Returns True if a signal was
+    sent.
     """
     if not pid or pid <= 0:
         return False
@@ -57,6 +74,15 @@ def _reap_orphan_training(pid: int) -> bool:
         return False  # process gone or not inspectable
     if b"train_yoloe" not in cmdline:
         return False  # pid reused by an unrelated process — do not touch
+    if _THIS_TRAIN_SCRIPT.encode() not in cmdline:
+        # A train_yoloe process, but NOT launched from this install (different
+        # absolute path) — almost certainly a sibling install sharing the DB.
+        # Never reap another install's training run.
+        logger.warning(
+            f"Skip reaping pid={pid}: train_yoloe from another install "
+            f"(cmdline lacks {_THIS_TRAIN_SCRIPT}) — not ours to kill."
+        )
+        return False
     try:
         os.killpg(pid, signal.SIGTERM)
     except (ProcessLookupError, PermissionError):

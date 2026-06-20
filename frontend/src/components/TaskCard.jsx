@@ -54,7 +54,8 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
   const canResume = task.taskStatus === 'paused'
   const canCancel = ['pending', 'running', 'paused'].includes(task.taskStatus)
   const canTerminate = ['running', 'paused'].includes(task.taskStatus)
-  const hasFrames = !!task.latestFrame || task.allFrames.length > 0
+  const hasFrames =
+    !!task.latestFrame || task.allFrames.length > 0 || (task.detectedFrameCount || 0) > 0
   const showViewer =
     ['running', 'paused', 'packaging', 'finished', 'cancelled', 'early_terminated'].includes(task.taskStatus) || hasFrames
 
@@ -255,6 +256,7 @@ export default function TaskCard({ task, onRemove, onRetry, onCancel, onPause, o
             taskId={task.taskId}
             latestFrame={task.latestFrame}
             allFrames={task.allFrames}
+            detectedFrameCount={task.detectedFrameCount}
             taskStatus={task.taskStatus}
             onOpenPreview={openPreviewAt}
             onOpenLiveFrame={openLive}

@@ -116,11 +116,50 @@ class Settings(BaseSettings):
     MAX_DETECTION_INTERVAL: int = Field(default=30, ge=1)
 
     # ── Frame Saving Strategy ────────────────────────────────────────────────
-    # Options: "all" | "keyframes_only" | "detections_only"
+    # Options: "all" | "keyframes_only" | "detections_only" | "unique_targets"
+    #          | "best_shot"
     # - "all": Save every frame (original behavior, large ZIP files)
-    # - "keyframes_only": Only save frames where detection was run (recommended, 70-90% reduction)
-    # - "detections_only": Only save frames with actual detections (maximum reduction)
-    SAVE_FRAMES_MODE: Literal["all", "keyframes_only", "detections_only"] = "keyframes_only"
+    # - "keyframes_only": Only save frames where detection was run (70-90% reduction)
+    # - "detections_only": Only save detection keyframes with at least one box
+    # - "unique_targets": Save a frame only when it shows a track_id not saved
+    #   before, then re-save the same target at most every
+    #   TRACK_SAVE_COOLDOWN_SEC. Uses ByteTrack IDs for cross-frame dedup, so
+    #   a target parked in view for minutes yields a few snapshots instead of
+    #   one per keyframe. See app/services/frame_save_gate.py.
+    # - "best_shot": Exactly ONE snapshot per target — the single highest-quality
+    #   frame across the target's whole track lifetime (scored on sharpness,
+    #   on-target size, confidence, and an edge-truncation penalty). Writes are
+    #   deferred to the end of the video, so the streamed thumbnails are only
+    #   the live previews; the optimal snapshots land in the result ZIP. See
+    #   app/services/best_shot.py.
+    SAVE_FRAMES_MODE: Literal[
+        "all", "keyframes_only", "detections_only", "unique_targets", "best_shot"
+    ] = "unique_targets"
+    # "unique_targets" only: minimum seconds between saves of the SAME track.
+    # 0 disables throttling (every detection keyframe with boxes, i.e.
+    # equivalent to "detections_only").
+    TRACK_SAVE_COOLDOWN_SEC: float = Field(default=10.0, ge=0.0)
+
+    # ── Best-shot scoring ("best_shot" mode only) ────────────────────────────
+    # Relative weights of the three quality components (normalised internally,
+    # need not sum to 1). Sharpness rewards in-focus crops, area rewards targets
+    # that are large/close, confidence rewards strong detections.
+    BEST_SHOT_WEIGHT_SHARPNESS: float = Field(default=0.4, ge=0.0)
+    BEST_SHOT_WEIGHT_AREA: float = Field(default=0.3, ge=0.0)
+    BEST_SHOT_WEIGHT_CONFIDENCE: float = Field(default=0.3, ge=0.0)
+    # Laplacian-variance value treated as "fully sharp" (scores saturate here).
+    BEST_SHOT_SHARPNESS_REF: float = Field(default=200.0, gt=0.0)
+    # Bbox area fraction of the frame treated as "fully large" (scores saturate).
+    # Small for a small-object project — 0.05 ⇒ a box covering 5% of the frame
+    # already maxes the area term.
+    BEST_SHOT_AREA_REF: float = Field(default=0.05, gt=0.0, le=1.0)
+    # A box within this many px of any frame edge is likely truncated.
+    BEST_SHOT_EDGE_MARGIN_PX: int = Field(default=4, ge=0)
+    # Multiplier applied to an edge-touching box's score (1.0 = no penalty).
+    BEST_SHOT_EDGE_PENALTY: float = Field(default=0.6, ge=0.0, le=1.0)
+    # Snapshots scoring below this are never written (0 = keep every target's
+    # best, however poor).
+    BEST_SHOT_MIN_SCORE: float = Field(default=0.0, ge=0.0, le=1.0)
 
     # JPEG quality for saved frames (1-100, lower = smaller files)
     JPEG_QUALITY: int = Field(default=85, ge=1, le=100)

@@ -156,6 +156,10 @@ class TaskState(BaseModel):
     progress: float = Field(default=0.0, ge=0.0, le=1.0, description="0.0 – 1.0")
     total_frames: int = 0
     processed_frames: int = 0
+    # Frames with ≥1 detection. Authoritative server-side counter: the SSE
+    # frame queue is bounded/drop-oldest, so a client counting delivered
+    # frames undercounts after any disconnect gap — it reconciles from this.
+    detection_frame_count: int = 0
     results: List[FrameResult] = []
     error: Optional[str] = None
     zip_ready: bool = False
@@ -172,6 +176,9 @@ class TaskStatusResponse(BaseModel):
     progress: float = Field(default=0.0, ge=0.0, le=1.0)
     total_frames: int = 0
     processed_frames: int = 0
+    # 0 when served from the DB archive (no column without Alembic) — clients
+    # must treat this as a floor, not a replacement (take max with local).
+    detection_frame_count: int = 0
     error: Optional[str] = None
     zip_ready: bool = False
     early_terminated: bool = False
@@ -193,6 +200,7 @@ class StreamEvent(BaseModel):
     progress: float = 0.0
     total_frames: int = 0
     processed_frames: int = 0
+    detection_frame_count: int = 0
     error: Optional[str] = None
 
 

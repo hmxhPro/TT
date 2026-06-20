@@ -35,9 +35,11 @@ import numpy as np
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import BoundingBox, Detection, FrameResult
+from app.services.best_shot import BestShotScorer, BestShotSelector
 from app.services.detector import RawDetection, get_detector, get_trained_detector
 from app.services.frame_analyzer import create_frame_analyzer
 from app.services.frame_quality import create_quality_checker
+from app.services.frame_save_gate import FrameSaveGate
 from app.services.fusion_engine import FusionEngine
 from app.services.color_filter import create_color_filter, get_preset_color_filter
 from app.services.task_manager import TaskManager
@@ -221,6 +223,28 @@ def _sync_pipeline(
     detector = get_trained_detector(weights_path) if weights_path else get_detector()
     tracker = create_tracker(fps=fps)
     fusion = FusionEngine()
+    save_gate = FrameSaveGate(
+        mode=settings.SAVE_FRAMES_MODE,
+        cooldown_sec=settings.TRACK_SAVE_COOLDOWN_SEC,
+    )
+    # Best-shot: one optimal snapshot per target, chosen across its whole track
+    # lifetime and written at the end (see _flush_best_shots). When active, the
+    # per-frame save_gate is bypassed — nothing is written inline.
+    best_shot_mode = settings.SAVE_FRAMES_MODE == "best_shot"
+    best_shot_selector: Optional[BestShotSelector] = None
+    best_shot_scorer: Optional[BestShotScorer] = None
+    if best_shot_mode:
+        best_shot_selector = BestShotSelector(min_score=settings.BEST_SHOT_MIN_SCORE)
+        best_shot_scorer = BestShotScorer(
+            w_sharpness=settings.BEST_SHOT_WEIGHT_SHARPNESS,
+            w_area=settings.BEST_SHOT_WEIGHT_AREA,
+            w_confidence=settings.BEST_SHOT_WEIGHT_CONFIDENCE,
+            sharpness_ref=settings.BEST_SHOT_SHARPNESS_REF,
+            area_ref=settings.BEST_SHOT_AREA_REF,
+            edge_margin_px=settings.BEST_SHOT_EDGE_MARGIN_PX,
+            edge_penalty=settings.BEST_SHOT_EDGE_PENALTY,
+        )
+        logger.info(f"[{task_id}] Best-shot mode: one optimal snapshot per target.")
     vlm = get_vlm_service() if enable_vlm else None
 
     # Use original Chinese prompt for display if available
@@ -414,18 +438,6 @@ def _sync_pipeline(
 
             schema_detections = _build_detections(tracked_objects, fusion)
 
-            # Determine if we should save this frame based on SAVE_FRAMES_MODE
-            should_save_frame = False
-            if settings.SAVE_FRAMES_MODE == "all":
-                should_save_frame = True
-            elif settings.SAVE_FRAMES_MODE == "keyframes_only":
-                should_save_frame = is_detection_frame
-            elif settings.SAVE_FRAMES_MODE == "detections_only":
-                # Only save annotated detection-keyframes that have at least one
-                # box drawn on them (tentative or confirmed). Tracking-only frames
-                # in between keyframes are skipped to avoid near-duplicates.
-                should_save_frame = is_detection_frame and len(schema_detections) > 0
-
             annotated = draw_detections(
                 frame=frame,
                 tracked_objects=tracked_objects,
@@ -436,6 +448,34 @@ def _sync_pipeline(
                 corner_length=settings.CORNER_LENGTH,
                 box_thickness=settings.BOX_THICKNESS,
             )
+
+            # Decide which frames reach disk.
+            #   • best_shot: nothing inline — every detection is offered to the
+            #     selector, which keeps each target's single best frame and the
+            #     winners are written once at the end (_flush_best_shots).
+            #   • otherwise: SAVE_FRAMES_MODE via the save_gate (in
+            #     "unique_targets" mode it dedups by ByteTrack track_id).
+            should_save_frame = False
+            if best_shot_mode:
+                for det in schema_detections:
+                    if det.track_id is None:
+                        continue
+                    shot_score = best_shot_scorer.score(
+                        frame, det.bbox.x1, det.bbox.y1,
+                        det.bbox.x2, det.bbox.y2, det.score,
+                    )
+                    best_shot_selector.consider(
+                        track_id=det.track_id,
+                        score=shot_score,
+                        frame_idx=frame_idx,
+                        encode=lambda a=annotated: _encode_jpeg(a),
+                    )
+            else:
+                should_save_frame = save_gate.should_save(
+                    is_detection_frame=is_detection_frame,
+                    detections=schema_detections,
+                    ts_seconds=ts_seconds,
+                )
 
             # Save frame to disk only if needed
             img_filename = None
@@ -471,6 +511,16 @@ def _sync_pipeline(
 
     finally:
         cap.release()
+
+    # Best-shot: write each target's single best snapshot now that all frames
+    # have been scored. Skipped on cancel (that path discards the ZIP); a
+    # manual terminate still flushes, packaging the partial best shots.
+    if best_shot_mode and not task_manager.is_cancelled(task_id):
+        written = _flush_best_shots(best_shot_selector, task_results_dir, fps)
+        logger.info(
+            f"[{task_id}] Best-shot: wrote {written} snapshot(s) "
+            f"for {best_shot_selector.track_count} target(s)."
+        )
 
     # Log statistics
     if quality_checker:
@@ -587,6 +637,43 @@ def _make_frame_filename(frame_id: int, timestamp: str) -> str:
     """
     ts_safe = timestamp.replace(":", "-").replace(".", "-")
     return f"frame_{frame_id:06d}_{ts_safe}.jpg"
+
+
+def _encode_jpeg(frame: np.ndarray) -> bytes:
+    """Encode a BGR frame as JPEG bytes at the configured save quality.
+
+    Used by best-shot to retain a candidate snapshot in memory until the video
+    ends (cheap: ~one image per live track), then flush it to disk verbatim.
+    """
+    ok, buf = cv2.imencode(
+        ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, settings.JPEG_QUALITY]
+    )
+    if not ok:
+        raise RuntimeError("Failed to JPEG-encode best-shot frame.")
+    return buf.tobytes()
+
+
+def _flush_best_shots(
+    selector: BestShotSelector,
+    task_results_dir: Path,
+    fps: float,
+) -> int:
+    """Write every target's best snapshot to disk; return the file count.
+
+    Filenames reuse the standard frame_<idx>_<ts>.jpg scheme so the snapshots
+    are picked up by _package_zip's glob and served by /api/frame like any
+    other saved frame.
+    """
+    written = 0
+    for frame_idx, jpeg_bytes in selector.winners().items():
+        ts_str = format_timestamp(frame_idx / fps) if fps > 0 else "00-00-00-000"
+        img_path = task_results_dir / _make_frame_filename(frame_idx, ts_str)
+        try:
+            img_path.write_bytes(jpeg_bytes)
+            written += 1
+        except OSError as exc:
+            logger.warning(f"Best-shot write failed for frame {frame_idx}: {exc}")
+    return written
 
 
 def _build_detections(

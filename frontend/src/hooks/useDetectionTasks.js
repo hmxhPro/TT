@@ -72,6 +72,16 @@ export function useDetectionTasks() {
   })
   const tasksRef = useRef([])
   const streamsRef = useRef(new Map()) // id -> EventSource
+  // reconcileWithServer needs to reopen the SSE stream, but openStream's
+  // onerror needs reconcileWithServer — the ref breaks the definition cycle.
+  const openStreamRef = useRef(null)
+  // id -> consecutive stream reopens without a single delivered event. Caps
+  // the reconnect loop when SSE errors right back (e.g. a stale DB row still
+  // says "running" after a backend restart, so /api/stream 404s forever).
+  const reopenAttemptsRef = useRef(new Map())
+  // id -> generation token. Each reconcileWithServer invocation bumps it so a
+  // superseded (older) reconcile loop exits instead of running concurrently.
+  const reconcileGenRef = useRef(new Map())
 
   // Keep tasksRef in sync with tasks state
   useEffect(() => {
@@ -108,6 +118,8 @@ export function useDetectionTasks() {
       es.close()
       streamsRef.current.delete(id)
     }
+    reopenAttemptsRef.current.delete(id)
+    reconcileGenRef.current.delete(id)
   }, [])
 
   // ── Public: add newly selected files as queued tasks ────────────────────
@@ -160,6 +172,9 @@ export function useDetectionTasks() {
       return
     }
 
+    // A delivered event proves the stream works — reset the reopen budget.
+    reopenAttemptsRef.current.delete(id)
+
     switch (data.event_type) {
       case 'frame':
         setTasks((prev) =>
@@ -187,9 +202,14 @@ export function useDetectionTasks() {
               totalFrames: data.total_frames ?? t.totalFrames,
               latestFrame: fr ?? t.latestFrame,
               allFrames: nextAllFrames,
-              detectedFrameCount: hasDetection
-                ? (t.detectedFrameCount || 0) + 1
-                : (t.detectedFrameCount || 0),
+              // The server counter is authoritative — and read at DELIVERY
+              // time, so it may already include frames still in flight.
+              // Never add the local +1 on top of it: replayed backlogs after
+              // a reconnect would inflate the count permanently. The local
+              // +1 only serves backends without the field.
+              detectedFrameCount: data.detection_frame_count != null
+                ? Math.max(t.detectedFrameCount || 0, data.detection_frame_count)
+                : (t.detectedFrameCount || 0) + (hasDetection ? 1 : 0),
             }
           })
         )
@@ -205,6 +225,7 @@ export function useDetectionTasks() {
           taskStatus: 'cancelled',
           processedFrames: data.processed_frames ?? t.processedFrames,
           totalFrames: data.total_frames ?? t.totalFrames,
+          detectedFrameCount: Math.max(t.detectedFrameCount || 0, data.detection_frame_count ?? 0),
         }))
         break
       case 'packaging':
@@ -213,6 +234,7 @@ export function useDetectionTasks() {
           progress: 1.0,
           processedFrames: data.processed_frames ?? t.processedFrames,
           totalFrames: data.total_frames ?? t.totalFrames,
+          detectedFrameCount: Math.max(t.detectedFrameCount || 0, data.detection_frame_count ?? 0),
         }))
         break
       case 'early_terminated':
@@ -221,6 +243,7 @@ export function useDetectionTasks() {
           progress: data.progress ?? t.progress,
           processedFrames: data.processed_frames ?? t.processedFrames,
           totalFrames: data.total_frames ?? t.totalFrames,
+          detectedFrameCount: Math.max(t.detectedFrameCount || 0, data.detection_frame_count ?? 0),
           earlyTerminated: true,
           terminationReason: data.error || 'Early termination triggered',
         }))
@@ -234,6 +257,7 @@ export function useDetectionTasks() {
             taskStatus: 'finished',
             progress: 1.0,
             processedFrames: data.processed_frames ?? t.processedFrames,
+            detectedFrameCount: Math.max(t.detectedFrameCount || 0, data.detection_frame_count ?? 0),
             zipReady: true,
           }
         })
@@ -262,34 +286,59 @@ export function useDetectionTasks() {
       return
     }
 
+    // Supersede any older reconcile loop still sleeping for this id.
+    const gen = (reconcileGenRef.current.get(id) || 0) + 1
+    reconcileGenRef.current.set(id, gen)
+
     const POLL_INTERVAL_MS = 4000
     const MAX_ATTEMPTS = 90  // ~6 min total grace period
+    const MAX_STREAM_REOPENS = 5
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      // Bail out if a newer reconcile took over, or if the task was removed
+      // or restarted (different backend taskId) while we slept — a stale
+      // loop must not patch state or touch streams for a run it no longer
+      // owns.
+      if (reconcileGenRef.current.get(id) !== gen) return
+      if (tasksRef.current.find((t) => t.id === id)?.taskId !== taskId) return
       try {
         const state = await getTask(taskId)
+        // Re-check after the await: a stream 'done'/'error' may have landed
+        // while this poll was in flight (its closeStream deletes the gen
+        // entry) — patching the stale response would flick the card from
+        // finished back to running and reopen a dead stream.
+        if (reconcileGenRef.current.get(id) !== gen) return
+        // Server-side detected-frame counter: authoritative floor for the
+        // local count (SSE frames can be dropped server-side mid-disconnect).
+        const mergeCount = (t) =>
+          Math.max(t.detectedFrameCount || 0, state.detection_frame_count || 0)
         if (state.status === 'finished') {
-          patchTask(id, {
+          closeStream(id)
+          patchTask(id, (t) => ({
             taskStatus: 'finished',
             progress: 1.0,
             processedFrames: state.processed_frames,
             totalFrames: state.total_frames,
+            detectedFrameCount: mergeCount(t),
             zipReady: !!state.zip_ready,
-          })
+          }))
           return
         }
         if (state.status === 'early_terminated') {
-          patchTask(id, {
+          closeStream(id)
+          patchTask(id, (t) => ({
             taskStatus: 'early_terminated',
             progress: state.progress,
             processedFrames: state.processed_frames,
             totalFrames: state.total_frames,
+            detectedFrameCount: mergeCount(t),
             zipReady: !!state.zip_ready,
             earlyTerminated: true,
             terminationReason: state.termination_reason || 'Early termination triggered',
-          })
+          }))
           return
         }
         if (state.status === 'failed') {
+          closeStream(id)
           patchTask(id, {
             taskStatus: 'failed',
             error: state.error || '任务在服务器端失败',
@@ -297,22 +346,24 @@ export function useDetectionTasks() {
           return
         }
         if (state.status === 'cancelled') {
-          patchTask(id, {
+          closeStream(id)
+          patchTask(id, (t) => ({
             taskStatus: 'cancelled',
             processedFrames: state.processed_frames,
             totalFrames: state.total_frames,
-          })
+            detectedFrameCount: mergeCount(t),
+          }))
           return
         }
         if (state.status === 'paused') {
-          patchTask(id, {
+          patchTask(id, (t) => ({
             taskStatus: 'paused',
             progress: state.progress,
             processedFrames: state.processed_frames,
             totalFrames: state.total_frames,
+            detectedFrameCount: mergeCount(t),
             error: null,
-          })
-          // Keep polling — user might resume or cancel later.
+          }))
         } else {
           // Still running / packaging.
           const nextStatus =
@@ -320,13 +371,36 @@ export function useDetectionTasks() {
             state.processed_frames >= state.total_frames
               ? 'packaging'
               : 'running'
-          patchTask(id, {
+          patchTask(id, (t) => ({
             taskStatus: nextStatus,
             progress: state.progress,
             processedFrames: state.processed_frames,
             totalFrames: state.total_frames,
+            detectedFrameCount: mergeCount(t),
             error: null,
-          })
+          }))
+        }
+        // The task is still alive and SSE is the only source of frame events
+        // (live view, thumbnails, detected-frame counter) — the backend
+        // keeps the event queue alive for reconnects, so reattach. But keep
+        // polling as a watchdog: the server's single terminal sentinel can
+        // be stolen by a zombie generator on a half-dead connection, in
+        // which case the reopened stream would idle on keepalives until the
+        // backend's synthetic-terminal heartbeat — this poll loop is the
+        // client-side belt to that suspender.
+        const attempts = reopenAttemptsRef.current.get(id) || 0
+        if (!streamsRef.current.has(id) && attempts < MAX_STREAM_REOPENS) {
+          reopenAttemptsRef.current.set(id, attempts + 1)
+          openStreamRef.current?.(id, taskId)
+        }
+        if (streamsRef.current.has(id)) {
+          // The attempts entry is cleared when the stream delivers any
+          // event — at that point SSE is proven healthy and owns the task.
+          if (!reopenAttemptsRef.current.has(id)) return
+          // A paused task can stay paused indefinitely; with a stream
+          // attached, resume/cancel will arrive there. Don't burn the
+          // 6-min poll budget into a spurious 'failed'.
+          if (state.status === 'paused') return
         }
       } catch (err) {
         // FastAPI returns 404 with detail "Task '...' not found." once the
@@ -342,8 +416,14 @@ export function useDetectionTasks() {
       }
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
     }
-    patchTask(id, { taskStatus: 'failed', error: '与服务器失联，已超过等待时长' })
-  }, [patchTask])
+    // Poll budget exhausted. With a live stream still attached, leave the
+    // status alone — SSE (or the backend's synthetic-terminal heartbeat)
+    // will deliver the ending; stamping 'failed' here would mislabel a
+    // long-running task whose stream is healthy but quiet (e.g. packaging).
+    if (!streamsRef.current.has(id)) {
+      patchTask(id, { taskStatus: 'failed', error: '与服务器失联，已超过等待时长' })
+    }
+  }, [patchTask, closeStream])
 
   // ── Open (or reopen) the SSE stream for a backend task ────────────────
   // Extracted so both the initial run and the post-refresh rehydrate path
@@ -376,6 +456,11 @@ export function useDetectionTasks() {
       }
     }
   }, [handleStreamEvent, reconcileWithServer, patchTask])
+
+  // Late binding for reconcileWithServer (declared before openStream).
+  useEffect(() => {
+    openStreamRef.current = openStream
+  }, [openStream])
 
   // ── Run a single task through the full workflow ────────────────────────
   const runTask = useCallback(async (id, prompt, detectionInterval, enableVlm, modelId) => {
@@ -458,16 +543,20 @@ export function useDetectionTasks() {
       if (!t.taskId) return  // never reached the backend — nothing to rehydrate
       try {
         const state = await getTask(t.taskId)
-        patchTask(t.id, {
+        patchTask(t.id, (cur) => ({
           taskStatus: state.status,
           progress: state.progress ?? 0,
           processedFrames: state.processed_frames ?? 0,
           totalFrames: state.total_frames ?? 0,
+          detectedFrameCount: Math.max(
+            cur.detectedFrameCount || 0,
+            state.detection_frame_count || 0
+          ),
           zipReady: !!state.zip_ready,
           earlyTerminated: !!state.early_terminated,
           terminationReason: state.termination_reason ?? null,
           error: state.error ?? null,
-        })
+        }))
         if (ACTIVE.includes(state.status)) {
           openStream(t.id, t.taskId)
         }

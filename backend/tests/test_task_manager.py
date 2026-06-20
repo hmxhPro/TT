@@ -103,3 +103,45 @@ def test_lru_evicts_oldest_terminal_only(monkeypatch):
     # cap=3 over 5 terminal → evict 2 oldest; active is never evicted
     assert "f0" not in tm._tasks and "f1" not in tm._tasks
     assert {"f2", "f3", "f4", "active"} <= set(tm._tasks)
+
+
+# ── detection_frame_count: authoritative frames-with-detections counter ─────
+
+def _det_frame(i: int) -> FrameResult:
+    from app.models.schemas import BoundingBox, Detection
+
+    return FrameResult(
+        frame_id=i,
+        timestamp="00:00:00.000",
+        timestamp_seconds=0.0,
+        detections=[
+            Detection(label="x", score=0.9, bbox=BoundingBox(x1=0, y1=0, x2=1, y2=1))
+        ],
+    )
+
+
+def test_detection_frame_count_counts_only_detection_frames():
+    tm = TaskManager()
+    tid = "t6"
+    tm._tasks[tid] = TaskState(
+        task_id=tid, video_id="v", prompt="p", status=TaskStatus.RUNNING
+    )
+    tm.add_frame_result_sync(tid, _frame(0))       # no detections
+    tm.add_frame_result_sync(tid, _det_frame(1))
+    tm.add_frame_result_sync(tid, _det_frame(2))
+    tm.add_frame_result_sync(tid, _frame(3))       # no detections
+    st = tm._tasks[tid]
+    assert st.processed_frames == 4
+    assert st.detection_frame_count == 2
+
+
+def test_detection_frame_count_survives_release_results():
+    tm = TaskManager()
+    tid = "t7"
+    st = TaskState(task_id=tid, video_id="v", prompt="p", status=TaskStatus.RUNNING)
+    tm._tasks[tid] = st
+    tm.add_frame_result_sync(tid, _det_frame(0))
+    st.status = TaskStatus.FINISHED
+    tm.release_results(tid)
+    assert tm._tasks[tid].results == []
+    assert tm._tasks[tid].detection_frame_count == 1

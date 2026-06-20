@@ -286,6 +286,8 @@ class TaskManager:
             state.results.append(frame)
             state.processed_frames += 1
             state.progress = state.processed_frames / max(state.total_frames, 1)
+            if frame.detections:
+                state.detection_frame_count += 1
 
     def add_frame_result_sync(self, task_id: str, frame: FrameResult) -> None:
         """Called directly from the worker thread — no asyncio overhead.
@@ -300,6 +302,8 @@ class TaskManager:
             state.results.append(stored)
             state.processed_frames += 1
             state.progress = state.processed_frames / max(state.total_frames, 1)
+            if frame.detections:
+                state.detection_frame_count += 1
 
     async def set_finished(self, task_id: str) -> None:
         async with self._state_lock:

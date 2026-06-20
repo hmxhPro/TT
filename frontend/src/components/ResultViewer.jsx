@@ -68,11 +68,19 @@ export default function ResultViewer({
   taskId,
   latestFrame,
   allFrames = [],
+  detectedFrameCount,
   taskStatus,
   onOpenPreview,     // (idx: number) => void
   onOpenLiveFrame,   // () => void  — enlarge the current live frame (not in history)
 }) {
   const gridRef = useRef(null)
+
+  // allFrames is capped (useDetectionTasks keeps the last 300 for thumbnails)
+  // and thinned on refresh (frames never saved to disk are dropped from
+  // localStorage); detectedFrameCount is the uncapped counter, floored by the
+  // server's authoritative count. max() covers tasks persisted before the
+  // counter existed.
+  const trueDetected = Math.max(detectedFrameCount || 0, allFrames.length)
 
   useEffect(() => {
     if (gridRef.current && taskStatus === 'running') {
@@ -80,7 +88,7 @@ export default function ResultViewer({
     }
   }, [allFrames.length, taskStatus])
 
-  if (!latestFrame && allFrames.length === 0) {
+  if (!latestFrame && allFrames.length === 0 && trueDetected === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-ink-400 border-2 border-dashed border-ink-200 rounded-xl bg-ink-50/60">
         <p className="text-sm">等待第一帧结果…</p>
@@ -166,26 +174,34 @@ export default function ResultViewer({
       )}
 
       {/* ── History (only detection-positive frames) ────────────────────── */}
-      {allFrames.length > 0 && (
+      {trueDetected > 0 && (
         <div>
           <h4 className="text-ink-600 text-xs mb-2 flex items-center gap-1.5">
             <Target size={12} className="text-brand-500" />
-            检测到目标的帧 · <span className="font-mono text-ink-800">{allFrames.length}</span>
-            <span className="text-ink-400">（点击缩略图放大）</span>
+            检测到目标的帧 · <span className="font-mono text-ink-800">{trueDetected}</span>
+            <span className="text-ink-400">
+              {allFrames.length === 0
+                ? '（缩略图不可用，完整结果见下载的 ZIP）'
+                : trueDetected > allFrames.length
+                  ? `（仅展示最近 ${allFrames.length} 帧缩略图，点击放大）`
+                  : '（点击缩略图放大）'}
+            </span>
           </h4>
-          <div
-            ref={gridRef}
-            className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-56 overflow-y-auto pr-1"
-          >
-            {allFrames.map((frame, i) => (
-              <FrameThumbnail
-                key={`${frame.frame_id}-${i}`}
-                frame={frame}
-                idx={i}
-                onClick={onOpenPreview}
-              />
-            ))}
-          </div>
+          {allFrames.length > 0 && (
+            <div
+              ref={gridRef}
+              className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-56 overflow-y-auto pr-1"
+            >
+              {allFrames.map((frame, i) => (
+                <FrameThumbnail
+                  key={`${frame.frame_id}-${i}`}
+                  frame={frame}
+                  idx={i}
+                  onClick={onOpenPreview}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -16,6 +16,7 @@ Style goals (matching example_pro.png):
 from __future__ import annotations
 
 import base64
+import os
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -136,6 +137,18 @@ _CJK_FONT_CANDIDATES = [
 
 
 def _find_cjk_font_path() -> Optional[Path]:
+    # 1) Explicit override — offline bundles point this at a packaged CJK font.
+    env_font = os.environ.get("SOD_CJK_FONT")
+    if env_font and Path(env_font).exists():
+        return Path(env_font)
+    # 2) Bundled Ultralytics Arial.Unicode.ttf (offline deploy ships it here;
+    #    YOLO_CONFIG_DIR is exported by run_backend.sh / the systemd unit).
+    cfg = os.environ.get("YOLO_CONFIG_DIR")
+    if cfg:
+        cand = Path(cfg) / "Ultralytics" / "Arial.Unicode.ttf"
+        if cand.exists():
+            return cand
+    # 3) System-installed CJK fonts.
     for p in _CJK_FONT_CANDIDATES:
         if Path(p).exists():
             return Path(p)

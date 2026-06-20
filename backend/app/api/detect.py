@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from app.core.config import settings
 from app.core import state as app_state
 from app.core.logging import logger
-from app.db.models import TrainedModelRecord
+from app.db.models import TaskRecord, TrainedModelRecord
 from app.db.session import AsyncSessionLocal
 from app.models.schemas import (
     DetectRequest,
@@ -27,6 +27,11 @@ from app.models.schemas import (
     TaskState,
     TaskStatusResponse,
     TaskStatus,
+)
+from app.services.download_naming import (
+    MODEL_PROMPT_PREFIX,
+    build_zip_filename,
+    content_disposition,
 )
 from app.services.pipeline import run_detection_pipeline
 from app.services.prompt_normalizer import normalize_prompt
@@ -109,7 +114,9 @@ async def start_detection(body: DetectRequest) -> DetectResponse:
         label_mapping = {}
         color_filters = []
         vlm_query = "、".join(str(c) for c in class_names if c)
-        display_prompt = f"模型：{rec.name}"
+        # MODEL_PROMPT_PREFIX is the contract that lets the download endpoint
+        # recover the model name from the persisted prompt (download_naming.py).
+        display_prompt = f"{MODEL_PROMPT_PREFIX}{rec.name}"
         # create_task persists body.prompt — store a readable label for history.
         body = body.model_copy(update={"prompt": display_prompt})
         logger.info(
@@ -233,6 +240,7 @@ async def get_task(task_id: str) -> TaskStatusResponse:
             progress=state.progress,
             total_frames=state.total_frames,
             processed_frames=state.processed_frames,
+            detection_frame_count=state.detection_frame_count,
             error=state.error,
             zip_ready=state.zip_ready,
             early_terminated=state.early_terminated,
@@ -314,6 +322,53 @@ async def stream_task(task_id: str):
                         queue.get(), timeout=HEARTBEAT_SECONDS
                     )
                 except asyncio.TimeoutError:
+                    if task_manager._queues.get(task_id) is not queue:
+                        # Our queue was retired (push_done / push_error ran)
+                        # but this consumer never saw the single terminal
+                        # sentinel — a zombie generator from a half-dead
+                        # connection can steal it from the shared queue.
+                        # Emit a synthetic terminal event so a live client
+                        # isn't parked on the orphaned queue forever.
+                        if state.status == TaskStatus.FAILED:
+                            evt = StreamEvent(
+                                event_type="error",
+                                task_id=task_id,
+                                error=state.error or "Task failed.",
+                            )
+                        elif state.status == TaskStatus.EARLY_TERMINATED:
+                            evt = StreamEvent(
+                                event_type="early_terminated",
+                                task_id=task_id,
+                                progress=state.progress,
+                                total_frames=state.total_frames,
+                                processed_frames=state.processed_frames,
+                                detection_frame_count=state.detection_frame_count,
+                                error=state.termination_reason
+                                      or "Early termination triggered",
+                            )
+                        elif state.status == TaskStatus.CANCELLED:
+                            # Must NOT fall through to "done": clients treat
+                            # done as finished + downloadable, but a cancelled
+                            # task has no ZIP (download returns 409).
+                            evt = StreamEvent(
+                                event_type="cancelled",
+                                task_id=task_id,
+                                progress=state.progress,
+                                total_frames=state.total_frames,
+                                processed_frames=state.processed_frames,
+                                detection_frame_count=state.detection_frame_count,
+                            )
+                        else:
+                            evt = StreamEvent(
+                                event_type="done",
+                                task_id=task_id,
+                                progress=1.0,
+                                total_frames=state.total_frames,
+                                processed_frames=state.processed_frames,
+                                detection_frame_count=state.detection_frame_count,
+                            )
+                        yield f"data: {evt.model_dump_json()}\n\n"
+                        break
                     # SSE comment line — ignored by EventSource but keeps
                     # the TCP connection from being closed by proxies.
                     yield ": keepalive\n\n"
@@ -327,6 +382,7 @@ async def stream_task(task_id: str):
                         progress=state.progress,
                         total_frames=state.total_frames,
                         processed_frames=state.processed_frames,
+                        detection_frame_count=state.detection_frame_count,
                     )
                 elif event_type == "packaging":
                     evt = StreamEvent(
@@ -335,6 +391,7 @@ async def stream_task(task_id: str):
                         progress=1.0,
                         total_frames=state.total_frames,
                         processed_frames=state.processed_frames,
+                        detection_frame_count=state.detection_frame_count,
                     )
                 elif event_type in ("paused", "resumed", "cancelled"):
                     evt = StreamEvent(
@@ -343,6 +400,7 @@ async def stream_task(task_id: str):
                         progress=state.progress,
                         total_frames=state.total_frames,
                         processed_frames=state.processed_frames,
+                        detection_frame_count=state.detection_frame_count,
                     )
                 elif event_type == "early_terminated":
                     evt = StreamEvent(
@@ -351,6 +409,7 @@ async def stream_task(task_id: str):
                         progress=state.progress,
                         total_frames=state.total_frames,
                         processed_frames=state.processed_frames,
+                        detection_frame_count=state.detection_frame_count,
                         error=str(payload),  # termination reason
                     )
                 elif event_type == "done":
@@ -360,6 +419,7 @@ async def stream_task(task_id: str):
                         progress=1.0,
                         total_frames=state.total_frames,
                         processed_frames=state.processed_frames,
+                        detection_frame_count=state.detection_frame_count,
                     )
                 elif event_type == "error":
                     evt = StreamEvent(
@@ -437,6 +497,18 @@ async def download_results(task_id: str):
     _TERMINAL = {TaskStatus.FINISHED, TaskStatus.EARLY_TERMINATED}
 
     state = task_manager.get_task(task_id)
+
+    # The DB row supplies the download filename's metadata (prompt +
+    # created_at) and is the status authority when the task is no longer in
+    # memory — e.g. after a backend restart, or once the in-memory LRU has
+    # evicted an old terminal task (A-1 / R-5).
+    try:
+        async with AsyncSessionLocal() as session:
+            row = await session.get(TaskRecord, task_id)
+    except Exception as exc:
+        logger.warning(f"download DB lookup failed for {task_id}: {exc}")
+        row = None
+
     if state is not None:
         if state.status not in _TERMINAL:
             raise HTTPException(
@@ -445,17 +517,6 @@ async def download_results(task_id: str):
                        "Wait for 'finished' or 'early_terminated' before downloading.",
             )
     else:
-        # In-memory miss: consult the DB archive so a restarted/evicted task
-        # can still be downloaded from its on-disk ZIP.
-        try:
-            from app.db.models import TaskRecord
-
-            async with AsyncSessionLocal() as session:
-                row = await session.get(TaskRecord, task_id)
-        except Exception as exc:
-            logger.warning(f"download DB lookup failed for {task_id}: {exc}")
-            row = None
-
         if row is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -474,10 +535,25 @@ async def download_results(task_id: str):
             detail="ZIP file not found. The task may have failed during packaging.",
         )
 
+    # Name the download after what was detected: "<model name>_<ts>.zip" for
+    # trained-model tasks, "<prompt/classes>_<ts>.zip" for natural-language
+    # tasks. Falls back to the ZIP's mtime when the DB row is unavailable.
+    # The header is built by hand (not FileResponse's filename=) so non-ASCII
+    # names keep an ASCII filename= fallback for curl -OJ.
+    filename = build_zip_filename(
+        prompt=state.prompt if state is not None else (row.prompt or ""),
+        created_at=row.created_at if row is not None else None,
+        fallback_ts=zip_path.stat().st_mtime,
+    )
+
     return FileResponse(
         path=str(zip_path),
         media_type="application/zip",
-        filename=f"detection_results_{task_id[:8]}.zip",
+        headers={
+            "Content-Disposition": content_disposition(
+                filename, ascii_fallback=f"detection_{task_id[:8]}.zip"
+            ),
+        },
     )
 
 

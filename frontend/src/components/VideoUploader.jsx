@@ -72,10 +72,17 @@ export default function VideoUploader({ onFilesSelected, disabled, hasTasks }) {
       onDragLeave={handleDragLeave}
       onClick={handleClick}
     >
+      {/*
+        NOTE: deliberately NO `accept` attribute. A restrictive accept (esp. the
+        `video/*` MIME token) makes some OS file dialogs — notably Linux GTK
+        choosers and Windows installs with a broken .mp4 MIME association — hide
+        ALL video files, leaving only folders visible. Showing every file and
+        validating after selection (filterValidVideos + the backend's
+        get_video_info) is far more robust across environments.
+      */}
       <input
         ref={inputRef}
         type="file"
-        accept="video/*"
         multiple
         className="hidden"
         onChange={handleInputChange}
